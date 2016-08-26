@@ -63,7 +63,12 @@ function buildMain(options, callback) {
         (options, callback) => {
             progress.tick('packaging');
             // maybe skip passing icon parameter to electron packager
-            const packageOptions = maybeNoIconOption(options);
+            var packageOptions = maybeNoIconOption(options);
+            packageOptions = maybeNoAppCopyrightOption(packageOptions);
+            packageOptions = maybeNoAppVersionOption(packageOptions);
+            packageOptions = maybeNoBuildVersionOption(packageOptions);
+            packageOptions = maybeNoVersionStringOption(packageOptions);
+            packageOptions = maybeNoWin32metadataOption(packageOptions);
 
             packagerConsole.override();
 
@@ -124,6 +129,81 @@ function maybeNoIconOption(options) {
         if (!hasBinary.sync('wine')) {
             log.warn('Wine is required to set the icon for a Windows app when packaging on non-windows platforms');
             packageOptions.icon = null;
+        }
+    }
+    return packageOptions;
+}
+
+/**
+ * Removes the `app-copyright` parameter from options if building for Windows while not on Windows and Wine is not installed
+ * @param options
+ */
+function maybeNoAppCopyrightOption(options) {
+    const packageOptions = JSON.parse(JSON.stringify(options));
+    if (options.platform === 'win32' && !isWindows()) {
+        if (!hasBinary.sync('wine')) {
+            log.warn('Wine is required to use "app-copyright" option for a Windows app when packaging on non-windows platforms');
+            packageOptions['app-copyright'] = null;
+        }
+    }
+    return packageOptions;
+}
+
+/**
+ * Removes the `build-version` parameter from options if building for Windows while not on Windows and Wine is not installed
+ * @param options
+ */
+function maybeNoBuildVersionOption(options) {
+    const packageOptions = JSON.parse(JSON.stringify(options));
+    if (options.platform === 'win32' && !isWindows()) {
+        if (!hasBinary.sync('wine')) {
+            log.warn('Wine is required to use "build-version" option for a Windows app when packaging on non-windows platforms');
+            packageOptions['build-version'] = null;
+        }
+    }
+    return packageOptions;
+}
+
+/**
+ * Removes the `app-version` parameter from options if building for Windows while not on Windows and Wine is not installed
+ * @param options
+ */
+function maybeNoAppVersionOption(options) {
+    const packageOptions = JSON.parse(JSON.stringify(options));
+    if (options.platform === 'win32' && !isWindows()) {
+        if (!hasBinary.sync('wine')) {
+            log.warn('Wine is required to use "app-version" option for a Windows app when packaging on non-windows platforms');
+            packageOptions['app-version'] = null;
+        }
+    }
+    return packageOptions;
+}
+
+/**
+ * Removes the `version-string` parameter from options if building for Windows while not on Windows and Wine is not installed
+ * @param options
+ */
+function maybeNoVersionStringOption(options) {
+    const packageOptions = JSON.parse(JSON.stringify(options));
+    if (options.platform === 'win32' && !isWindows()) {
+        if (!hasBinary.sync('wine')) {
+            log.warn('Wine is required to use "version-string" option for a Windows app when packaging on non-windows platforms');
+            packageOptions['version-string'] = null;
+        }
+    }
+    return packageOptions;
+}
+
+/**
+ * Removes the `win32metadata` parameter from options if building for Windows while not on Windows and Wine is not installed
+ * @param options
+ */
+function maybeNoWin32metadataOption(options) {
+    const packageOptions = JSON.parse(JSON.stringify(options));
+    if (options.platform === 'win32' && !isWindows()) {
+        if (!hasBinary.sync('wine')) {
+            log.warn('Wine is required to use "win32metadata" option for a Windows app when packaging on non-windows platforms');
+            packageOptions.win32metadata = null;
         }
     }
     return packageOptions;

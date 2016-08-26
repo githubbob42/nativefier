@@ -96,6 +96,36 @@ The alternative values `win32` (for Windows) or `darwin`, `mac` (for OSX) can al
 
 Processor architecture, automatically determined based on the current OS. Can be overwritten by specifying either `ia32` or `x64`.
 
+#### [app-copyright]
+
+```
+--app-copyright <value>
+```
+
+*String*
+
+The human-readable copyright line for the app. Maps to the `LegalCopyright` metadata property on Windows, and `NSHumanReadableCopyright` on OS X.
+
+#### [app-version]
+
+```
+--app-version <value>
+```
+
+*String*
+
+The release version of the application. By default the `version` property in the `package.json` is used but it can be overridden with this argument. If neither are provided, the version of Electron will be used. Maps to the `ProductVersion` metadata property on Windows, and `CFBundleShortVersionString` on OS X.
+
+#### [build-version]
+
+```
+--build-version <value>
+```
+
+*String*
+
+The build version of the application. Maps to the `FileVersion` metadata property on Windows, and `CFBundleVersion` on OS X.
+
 #### [electron-version]
 
 ```
@@ -356,6 +386,9 @@ var options = {
     targetUrl: 'http://web.whatsapp.com', // required
     platform: 'darwin', // defaults to the current system
     arch: 'x64', // defaults to the current system
+    appCopyright: '© 2016 Your Company Name',
+    appVersion: '1.2.3',
+    buildVersion: '1.2.3.4',
     version: '0.36.4',
     out: '.',
     overwrite: false,
@@ -380,6 +413,41 @@ nativefier(options, function(error, appPath) {
     }
     console.log('App has been nativefied to', appPath);
 });
+```
+
+### Addition packaging options for Windows (only available via the Programmatic API)
+
+#### `version-string`
+
+*Object* (**deprecated** and will be removed in a future major version (of `electron-packager`), please use the
+[`win32metadata`](#win32metadata) parameter instead)
+
+#### `win32metadata`
+
+*Object*
+
+Object (also known as a "hash") of application metadata to embed into the executable:
+- `CompanyName`
+- `FileDescription`
+- `OriginalFilename`
+- `ProductName`
+- `InternalName`
+
+_(Note that `win32metadata` was added to `electron-packager` in version 8.0.0)_
+
+In your `.js` file:
+
+```javascript
+var options = {
+    ...
+    "version-string": {
+      CompanyName: 'Your Company Name',
+      FileDescription: 'Your File Description',
+      OriginalFilename: 'Your Original Filename',
+      ProductName: 'Your Product Name',
+      InternalName: 'Your Internal Name'
+    }
+};
 ```
 
 More description about the options for `nativefier` can be found at the above [section](#command-line).

@@ -32,6 +32,11 @@ const DEFAULT_APP_NAME = 'APP';
 function optionsFactory(inpOptions, callback) {
 
     const options = {
+        'app-version': inpOptions.appVersion,
+        'build-version': inpOptions.buildVersion,
+        'app-copyright': inpOptions.appCopyright,
+        win32metadata: inpOptions.win32metadata,
+        'version-string': inpOptions.versionString,
         dir: PLACEHOLDER_APP_DIR,
         name: inpOptions.name,
         targetUrl: normalizeUrl(inpOptions.targetUrl),
