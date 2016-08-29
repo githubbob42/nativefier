@@ -90,10 +90,15 @@ function changeAppPackageJsonName(appPath, name, url) {
 /**
  * Only picks certain app args to pass to nativefier.json
  * @param options
- * @returns {{name: (*|string), targetUrl: (string|*), counter: *, width: *, height: *, showMenuBar: *, userAgent: *, nativefierVersion: *, insecure: *, disableWebSecurity: *}}
+ * @returns {{app-copyright: (*|string), app-version: (*|string), build-version: (*|string), win32metadata: (object|*), version-string: (object|*), name: (*|string), targetUrl: (string|*), counter: *, width: *, height: *, showMenuBar: *, userAgent: *, nativefierVersion: *, insecure: *, disableWebSecurity: *}}
  */
 function selectAppArgs(options) {
     return {
+        appCopyright: options['app-copyright'],
+        appVersion: options['app-version'],
+        buildVersion: options['build-version'],
+        win32metadata: options.win32metadata,
+        'version-string': options['version-string'],
         name: options.name,
         targetUrl: options.targetUrl,
         counter: options.counter,
