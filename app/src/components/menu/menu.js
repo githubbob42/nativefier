@@ -1,4 +1,4 @@
-import {Menu, shell, clipboard} from 'electron';
+import {Menu, clipboard, dialog} from 'electron';
 
 /**
  * @param nativefierVersion
@@ -173,15 +173,15 @@ function createMenu({nativefierVersion, appQuit, zoomIn, zoomOut, goBack, goForw
             role: 'help',
             submenu: [
                 {
-                    label: `Built with Nativefier v${nativefierVersion}`,
+                    label: 'About...',
                     click: () => {
-                        shell.openExternal('https://github.com/jiahaog/nativefier');
-                    }
-                },
-                {
-                    label: 'Report an Issue',
-                    click: () => {
-                        shell.openExternal('https://github.com/jiahaog/nativefier/issues');
+                        dialog.showMessageBox(null, {
+                            type: 'info',
+                            buttons: [],
+                            defaultId: 1,
+                            title: 'About...',
+                            message: 'Copyright © 2005 - 2016 LiquidFrameworks, Inc. All Rights Reserved.'});
+                        console.log(`Built with Nativefier v${nativefierVersion}`);
                     }
                 }
             ]
