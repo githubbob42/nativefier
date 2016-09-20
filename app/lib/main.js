@@ -2723,7 +2723,8 @@
 	        goForward: onGoForward,
 	        getCurrentUrl: getCurrentUrl,
 	        clearAppData: clearAppData,
-	        disableDevTools: options.disableDevTools
+	        disableDevTools: options.disableDevTools,
+	        options: options
 	    };
 	
 	    (0, _menu2.default)(menuOptions);
@@ -3828,6 +3829,7 @@
 	    var getCurrentUrl = _ref.getCurrentUrl;
 	    var clearAppData = _ref.clearAppData;
 	    var disableDevTools = _ref.disableDevTools;
+	    var options = _ref.options;
 	
 	    if (_electron.Menu.getApplicationMenu()) {
 	        return;
@@ -3970,7 +3972,8 @@
 	                    buttons: [],
 	                    defaultId: 1,
 	                    title: 'About...',
-	                    message: 'Copyright © 2005 - 2016 LiquidFrameworks, Inc. All Rights Reserved.' });
+	                    message: options['version-string'].ProductName + '\n' + options.appCopyright + '\nhttp://www.liquidframeworks.com\n\nVersion: ' + options.buildVersion + '\n' + options.targetUrl
+	                });
 	                console.log('Built with Nativefier v' + nativefierVersion);
 	            }
 	        }]
