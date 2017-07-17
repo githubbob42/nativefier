@@ -153,6 +153,7 @@ function createMainWindow(inpOptions, onAppQuit, setDockBadge) {
     getCurrentUrl,
     clearAppData,
     disableDevTools: options.disableDevTools,
+    options,
   };
 
   createMenu(menuOptions);
