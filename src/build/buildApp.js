@@ -12,6 +12,11 @@ const copy = ncp.ncp;
  */
 function selectAppArgs(options) {
   return {
+    appCopyright: options['app-copyright'],
+    appVersion: options['app-version'],
+    buildVersion: options['build-version'],
+    win32metadata: options.win32metadata,
+    'version-string': options['version-string'],
     name: options.name,
     targetUrl: options.targetUrl,
     counter: options.counter,
