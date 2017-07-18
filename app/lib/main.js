@@ -42,7 +42,7 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -183,16 +183,16 @@
 	  }
 	}
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	__webpack_require__(2).install();
 
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var SourceMapConsumer = __webpack_require__(3).SourceMapConsumer;
 	var path = __webpack_require__(12);
@@ -682,9 +682,9 @@
 	};
 
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	/*
 	 * Copyright 2009-2011 Mozilla Foundation and contributors
@@ -696,9 +696,9 @@
 	exports.SourceNode = __webpack_require__(11).SourceNode;
 
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* -*- Mode: js; js-indent-level: 2; -*- */
 	/*
@@ -1082,9 +1082,9 @@
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* -*- Mode: js; js-indent-level: 2; -*- */
 	/*
@@ -1232,9 +1232,9 @@
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
-/***/ },
+/***/ }),
 /* 6 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* -*- Mode: js; js-indent-level: 2; -*- */
 	/*
@@ -1280,9 +1280,9 @@
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
-/***/ },
+/***/ }),
 /* 7 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* -*- Mode: js; js-indent-level: 2; -*- */
 	/*
@@ -1491,9 +1491,9 @@
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
-/***/ },
+/***/ }),
 /* 8 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* -*- Mode: js; js-indent-level: 2; -*- */
 	/*
@@ -1594,9 +1594,9 @@
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
-/***/ },
+/***/ }),
 /* 9 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* -*- Mode: js; js-indent-level: 2; -*- */
 	/*
@@ -2078,9 +2078,9 @@
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
-/***/ },
+/***/ }),
 /* 10 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* -*- Mode: js; js-indent-level: 2; -*- */
 	/*
@@ -2165,9 +2165,9 @@
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
-/***/ },
+/***/ }),
 /* 11 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* -*- Mode: js; js-indent-level: 2; -*- */
 	/*
@@ -2542,27 +2542,27 @@
 	}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 
 
-/***/ },
+/***/ }),
 /* 12 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = require("path");
 
-/***/ },
+/***/ }),
 /* 13 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = require("fs");
 
-/***/ },
+/***/ }),
 /* 14 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = require("electron");
 
-/***/ },
+/***/ }),
 /* 15 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	const path = __webpack_require__(12);
@@ -2624,9 +2624,9 @@
 	};
 
 
-/***/ },
+/***/ }),
 /* 16 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	const pathExists = __webpack_require__(17);
@@ -2650,9 +2650,9 @@
 	};
 
 
-/***/ },
+/***/ }),
 /* 17 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	const fs = __webpack_require__(13);
@@ -2673,9 +2673,9 @@
 	};
 
 
-/***/ },
+/***/ }),
 /* 18 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var path = __webpack_require__(12);
@@ -2696,9 +2696,9 @@
 	};
 
 
-/***/ },
+/***/ }),
 /* 19 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -2732,9 +2732,9 @@
 	
 	exports.default = createLoginWindow;
 
-/***/ },
+/***/ }),
 /* 20 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -2770,10 +2770,10 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var isOSX = _helpers2.default.isOSX;
-	var linkIsInternal = _helpers2.default.linkIsInternal;
-	var getCssToInject = _helpers2.default.getCssToInject;
-	var shouldInjectCss = _helpers2.default.shouldInjectCss;
+	var isOSX = _helpers2.default.isOSX,
+	    linkIsInternal = _helpers2.default.linkIsInternal,
+	    getCssToInject = _helpers2.default.getCssToInject,
+	    shouldInjectCss = _helpers2.default.shouldInjectCss;
 	
 	
 	var ZOOM_INTERVAL = 0.1;
@@ -3005,9 +3005,9 @@
 	
 	exports.default = createMainWindow;
 
-/***/ },
+/***/ }),
 /* 21 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -3185,9 +3185,9 @@
 	};
 
 
-/***/ },
+/***/ }),
 /* 22 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var _fs
 	try {
@@ -3324,9 +3324,9 @@
 	module.exports = jsonfile
 
 
-/***/ },
+/***/ }),
 /* 23 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var fs = __webpack_require__(13)
 	var polyfills = __webpack_require__(24)
@@ -3592,9 +3592,9 @@
 	}
 
 
-/***/ },
+/***/ }),
 /* 24 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var fs = __webpack_require__(25)
 	var constants = __webpack_require__(26)
@@ -3928,9 +3928,9 @@
 	}
 
 
-/***/ },
+/***/ }),
 /* 25 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict'
 	
@@ -3955,15 +3955,15 @@
 	}
 
 
-/***/ },
+/***/ }),
 /* 26 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = require("constants");
 
-/***/ },
+/***/ }),
 /* 27 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var Stream = __webpack_require__(28).Stream
 	
@@ -4085,27 +4085,27 @@
 	}
 
 
-/***/ },
+/***/ }),
 /* 28 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = require("stream");
 
-/***/ },
+/***/ }),
 /* 29 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = require("util");
 
-/***/ },
+/***/ }),
 /* 30 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = require("assert");
 
-/***/ },
+/***/ }),
 /* 31 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var path = __webpack_require__(12);
 	var fs = __webpack_require__(13);
@@ -4207,9 +4207,9 @@
 	};
 
 
-/***/ },
+/***/ }),
 /* 32 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	var pSlice = Array.prototype.slice;
 	var objectKeys = __webpack_require__(33);
@@ -4307,9 +4307,9 @@
 	}
 
 
-/***/ },
+/***/ }),
 /* 33 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	exports = module.exports = typeof Object.keys === 'function'
 	  ? Object.keys : shim;
@@ -4322,9 +4322,9 @@
 	}
 
 
-/***/ },
+/***/ }),
 /* 34 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	var supportsArgumentsClass = (function(){
 	  return Object.prototype.toString.call(arguments)
@@ -4348,9 +4348,9 @@
 	};
 
 
-/***/ },
+/***/ }),
 /* 35 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -4438,9 +4438,9 @@
 	  shouldInjectCss: shouldInjectCss
 	};
 
-/***/ },
+/***/ }),
 /* 36 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = function (arg, url) {
 	
@@ -4684,15 +4684,15 @@
 	    return '';*/
 	};
 
-/***/ },
+/***/ }),
 /* 37 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = require("os");
 
-/***/ },
+/***/ }),
 /* 38 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -4716,18 +4716,18 @@
 	 * @param disableDevTools
 	 */
 	function createMenu(_ref) {
-	  var nativefierVersion = _ref.nativefierVersion;
-	  var appQuit = _ref.appQuit;
-	  var zoomIn = _ref.zoomIn;
-	  var zoomOut = _ref.zoomOut;
-	  var zoomReset = _ref.zoomReset;
-	  var zoomBuildTimeValue = _ref.zoomBuildTimeValue;
-	  var goBack = _ref.goBack;
-	  var goForward = _ref.goForward;
-	  var getCurrentUrl = _ref.getCurrentUrl;
-	  var clearAppData = _ref.clearAppData;
-	  var disableDevTools = _ref.disableDevTools;
-	  var options = _ref.options;
+	  var nativefierVersion = _ref.nativefierVersion,
+	      appQuit = _ref.appQuit,
+	      zoomIn = _ref.zoomIn,
+	      zoomOut = _ref.zoomOut,
+	      zoomReset = _ref.zoomReset,
+	      zoomBuildTimeValue = _ref.zoomBuildTimeValue,
+	      goBack = _ref.goBack,
+	      goForward = _ref.goForward,
+	      getCurrentUrl = _ref.getCurrentUrl,
+	      clearAppData = _ref.clearAppData,
+	      disableDevTools = _ref.disableDevTools,
+	      options = _ref.options;
 	
 	  if (_electron.Menu.getApplicationMenu()) {
 	    return;
@@ -4883,7 +4883,7 @@
 	          defaultId: 1,
 	          title: 'About...',
 	          // message: 'Copyright © 2005 - 2016 LiquidFrameworks, Inc. All Rights Reserved.'});
-	          message: options['version-string'].ProductName + '\n' + options.appCopyright + '\nhttp://www.liquidframeworks.com\n\nVersion: ' + options.buildVersion + '\n' + options.targetUrl });
+	          message: options['version-string'].ProductName + '\n' + options.appCopyright + '\nhttp://www.liquidframeworks.com\n\nVersion: ' + options.buildVersion + '\n' + options.targetUrl + '\n\nElectron: ' + process.versions.electron + ' / Chrome: ' + process.versions.chrome });
 	        console.log('Built with Nativefier v' + nativefierVersion);
 	      }
 	    }]
@@ -4939,9 +4939,9 @@
 	
 	exports.default = createMenu;
 
-/***/ },
+/***/ }),
 /* 39 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -4992,9 +4992,9 @@
 	/* eslint-disable no-param-reassign */
 	exports.default = initContextMenu;
 
-/***/ },
+/***/ }),
 /* 40 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -5016,9 +5016,9 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var isOSX = _helpers2.default.isOSX;
-	var isWindows = _helpers2.default.isWindows;
-	var isLinux = _helpers2.default.isLinux;
+	var isOSX = _helpers2.default.isOSX,
+	    isWindows = _helpers2.default.isWindows,
+	    isLinux = _helpers2.default.isLinux;
 	
 	/**
 	 * Synchronously find a file or directory
@@ -5098,6 +5098,6 @@
 	}
 	exports.default = inferFlash;
 
-/***/ }
+/***/ })
 /******/ ]);
 //# sourceMappingURL=main.js.map
