@@ -88,6 +88,13 @@
 	var APP_ARGS_FILE_PATH = _path2.default.join(__dirname, '..', 'nativefier.json');
 	var appArgs = JSON.parse(_fs2.default.readFileSync(APP_ARGS_FILE_PATH, 'utf8'));
 	
+	if (appArgs.processEnvs) {
+	  Object.keys(appArgs.processEnvs).forEach(function (key) {
+	    /* eslint-env node */
+	    process.env[key] = appArgs.processEnvs[key];
+	  });
+	}
+	
 	var mainWindow = void 0;
 	
 	if (typeof appArgs.flashPluginDir === 'string') {
@@ -150,6 +157,7 @@
 	if (appArgs.crashReporter) {
 	  _electron.app.on('will-finish-launching', function () {
 	    _electron.crashReporter.start({
+	      companyName: appArgs.companyName || '',
 	      productName: appArgs.name,
 	      submitURL: appArgs.crashReporter,
 	      autoSubmit: true
@@ -2857,12 +2865,6 @@
 	
 	  mainWindowState.manage(mainWindow);
 	
-	  // after first run, no longer force full screen to be true
-	  if (options.fullScreen) {
-	    options.fullScreen = undefined;
-	    _fs2.default.writeFileSync(_path2.default.join(__dirname, '..', 'nativefier.json'), JSON.stringify(options));
-	  }
-	
 	  // after first run, no longer force maximize to be true
 	  if (options.maximize) {
 	    mainWindow.maximize();
@@ -2949,7 +2951,7 @@
 	
 	  if (options.counter) {
 	    mainWindow.on('page-title-updated', function (e, title) {
-	      var itemCountRegex = /[([{](\d*?)[}\])]/;
+	      var itemCountRegex = /[([{](\d*?)\+?[}\])]/;
 	      var match = itemCountRegex.exec(title);
 	      if (match) {
 	        setDockBadge(match[1]);
