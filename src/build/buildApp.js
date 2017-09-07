@@ -46,6 +46,7 @@ function selectAppArgs(options) {
     crashReporter: options.crashReporter,
     singleInstance: options.singleInstance,
     processEnvs: options.processEnvs,
+    build: inpOptions.build,
   };
 }
 

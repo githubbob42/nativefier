@@ -6,6 +6,9 @@ import helpers from './../../helpers/helpers';
 import createMenu from './../menu/menu';
 import initContextMenu from './../contextMenu/contextMenu';
 
+// import autoUpdater from 'electron-updater';
+// import log from 'electron-log';
+
 const { isOSX, linkIsInternal, getCssToInject, shouldInjectCss } = helpers;
 
 const ZOOM_INTERVAL = 0.1;
@@ -215,8 +218,108 @@ function createMainWindow(inpOptions, onAppQuit, setDockBadge) {
     maybeHideWindow(mainWindow, event, options.fastQuit);
   });
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+// function sendStatusToWindow(text) {
+//   log.info(text);
+//   // mainWindow.webContents.send('message', text);
+//   // mainWindow.webContents.executeJavaScript(`console.log('${text}')`, true);
+// }
+
+// autoUpdater.autoDownload = false;
+
+// autoUpdater.on('checking-for-update', () => {
+//   sendStatusToWindow('Checking for update...');
+// });
+
+// autoUpdater.on('update-available', (info) => {
+//   sendStatusToWindow(`Update available: (${app.getVersion()} to ${info.version})`);
+//   // dialog.showMessageBox(null, {
+//   //   type: 'info',
+//   //   buttons: ['Yes', 'No'],
+//   //   defaultId: 1,
+//   //   title: 'Update Available',
+//   //   message: 'A new version of FieldFX Desktop is available.  Would you like to install it now?'
+//   // }, (response) => {
+//   //   if (response !== 0) {
+//   //     return;
+//   //   }
+//   //   const session = mainWindow.webContents.session;
+//   //   session.clearStorageData(() => {
+//   //     session.clearCache(() => {
+//   //       mainWindow.loadURL(options.targetUrl);
+//   //     });
+//   //   });
+//   // });
+
+//   // dialog.showMessageBox(mainWindow, {
+//   //   type: 'info',
+//   //   buttons: ['Yes', 'No'],
+//   //   defaultId: 1,
+//   //   title: 'Update Available',
+//   //   // message: 'Copyright © 2005 - 2016 LiquidFrameworks, Inc. All Rights Reserved.'});
+//   //   message: 'A new version of FieldFX Desktop is available.  Would you like to install it now?'
+//   // }, (response) => {
+//   //   if (response !== 0) {
+//   //     return;
+//   //   }
+//   //   autoUpdater.downloadUpdate();
+
+//   //   dialog.showMessageBox(mainWindow, {
+//   //     type: 'info',
+//   //     buttons: [],
+//   //     defaultId: 1,
+//   //     title: 'Downloading Update...',
+//   //     message: 'Downloading Update...\n\nOnce the update is downloaded, the application will quit and automatically install the new version.'
+//   //   });
+//   // });
+// })
+
+// autoUpdater.on('update-not-available', (info) => {
+//   sendStatusToWindow('Update not available.');
+//   // dialog.showMessageBox(mainWindow, {
+//   //   title: 'update-not-available',
+//   //   message: 'update-not-available'});
+
+//   mainWindow.loadURL(options.targetUrl);
+
+// })
+
+// // autoUpdater.on('error', (err) => {
+// //   sendStatusToWindow('Error in auto-updater.');
+// // })
+// autoUpdater.on('error', (event, error) => {
+//   // dialog.showErrorBox('Error: ', error); // == null ? "unknown" : (error.stack || error).toString())
+//   sendStatusToWindow('Error in auto-updater: ' + error.message);
+//   sendStatusToWindow(error.stack);
+// })
+
+// autoUpdater.on('download-progress', (progressObj) => {
+//   let log_message = "Download speed: " + progressObj.bytesPerSecond;
+//   log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+//   log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+//   sendStatusToWindow(log_message);
+
+//   mainWindow.setProgressBar(progressObj.percent/100);
+// });
+
+// autoUpdater.on('update-downloaded', (info) => {
+//   // sendStatusToWindow('Update downloaded; will install in 5 seconds');
+//   // dialog.showMessageBox(mainWindow, {
+//   //   title: 'Install Updates',
+//   //   message: 'Updates downloaded, application will be quit for update...'
+//   // }, () => {
+//   //   setImmediate(() => autoUpdater.quitAndInstall())
+//   // });
+//   // // setImmediate(() => autoUpdater.quitAndInstall())
+// });
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
   return mainWindow;
 }
+
 
 ipcMain.on('cancelNewWindowOverride', () => {
   const allWindows = BrowserWindow.getAllWindows();
