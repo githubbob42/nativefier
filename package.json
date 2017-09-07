@@ -56,6 +56,8 @@
     "shelljs": "^0.7.0",
     "source-map-support": "^0.4.0",
     "tmp": "0.0.31",
+    "electron-log": "^1.3.0",
+    "electron-updater": "^2.9.0",
     "validator": "^7.0.0"
   },
   "devDependencies": {

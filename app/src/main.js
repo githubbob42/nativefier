@@ -1,13 +1,16 @@
 import 'source-map-support/register';
 import fs from 'fs';
 import path from 'path';
-import { app, crashReporter } from 'electron';
+import { app, crashReporter, dialog } from 'electron';
 import electronDownload from 'electron-dl';
 
 import createLoginWindow from './components/login/loginWindow';
 import createMainWindow from './components/mainWindow/mainWindow';
 import helpers from './helpers/helpers';
 import inferFlash from './helpers/inferFlash';
+
+import autoUpdater from 'electron-updater';
+import log from 'electron-log';
 
 const { isOSX } = helpers;
 
@@ -95,6 +98,9 @@ if (appArgs.crashReporter) {
 
 app.on('ready', () => {
   mainWindow = createMainWindow(appArgs, app.quit, setDockBadge);
+
+  autoUpdater.checkForUpdates();
+
 });
 
 app.on('login', (event, webContents, request, authInfo, callback) => {
@@ -102,6 +108,99 @@ app.on('login', (event, webContents, request, authInfo, callback) => {
   event.preventDefault();
   createLoginWindow(callback);
 });
+
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+function sendStatusToWindow(text) {
+  log.info(text);
+  // win.webContents.send('message', text);
+  // win.webContents.executeJavaScript(`console.log('${text}')`, true);
+}
+
+autoUpdater.autoDownload = false;
+
+autoUpdater.on('checking-for-update', () => {
+  sendStatusToWindow('Checking for update...');
+});
+
+autoUpdater.on('update-available', (info) => {
+  sendStatusToWindow(`Update available: (${app.getVersion()} to ${info.version})`);
+  // dialog.showMessageBox(null, {
+  //   type: 'info',
+  //   buttons: ['Yes', 'No'],
+  //   defaultId: 1,
+  //   title: 'Update Available',
+  //   message: 'A new version of FieldFX Desktop is available.  Would you like to install it now?'
+  // }, (response) => {
+  //   if (response !== 0) {
+  //     return;
+  //   }
+  //   const session = mainWindow.webContents.session;
+  //   session.clearStorageData(() => {
+  //     session.clearCache(() => {
+  //       mainWindow.loadURL(options.targetUrl);
+  //     });
+  //   });
+  // });
+
+  dialog.showMessageBox(mainWindow, {
+    type: 'info',
+    buttons: ['Yes', 'No'],
+    defaultId: 1,
+    title: 'Update Available',
+    // message: 'Copyright © 2005 - 2016 LiquidFrameworks, Inc. All Rights Reserved.'});
+    message: 'A new version of FieldFX Desktop is available.  Would you like to install it now?'
+  }, (response) => {
+    if (response !== 0) {
+      return;
+    }
+    autoUpdater.downloadUpdate();
+
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      buttons: [],
+      defaultId: 1,
+      title: 'Downloading Update...',
+      message: 'Downloading Update...\n\nOnce the update is downloaded, the application will quit and automatically install the new version.'
+    });
+  });
+})
+
+// autoUpdater.on('update-not-available', (info) => {
+//   sendStatusToWindow('Update not available.');
+// })
+
+// autoUpdater.on('error', (err) => {
+//   sendStatusToWindow('Error in auto-updater.');
+// })
+autoUpdater.on('error', (event, error) => {
+  sendStatusToWindow('Error in auto-updater: ' + error.message);
+  sendStatusToWindow(error.stack);
+  dialog.showErrorBox('Error: ', error == null ? "unknown" : (error.stack || error).toString())
+})
+
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = "Download speed: " + progressObj.bytesPerSecond;
+  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  sendStatusToWindow(log_message);
+
+  mainWindow.setProgressBar(progressObj.percent/100);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  // sendStatusToWindow('Update downloaded; will install in 5 seconds');
+  // dialog.showMessageBox({
+  //   title: 'Install Updates',
+  //   message: 'Updates downloaded, application will be quit for update...'
+  // }, () => {
+  //   setImmediate(() => autoUpdater.quitAndInstall())
+  // });
+  setImmediate(() => autoUpdater.quitAndInstall())
+});
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 if (appArgs.singleInstance) {
   const shouldQuit = app.makeSingleInstance(() => {
