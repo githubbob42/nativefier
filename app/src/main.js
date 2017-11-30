@@ -12,15 +12,11 @@ import inferFlash from './helpers/inferFlash';
 
 const { isOSX } = helpers;
 
-// BR: set some default options for file downloads
-let dlOpts = {};
-dlOpts.saveAs = true; // force "Save As" dialog on downloads.
-dlOpts.openFolderWhenDone = false; // show file in FileExporer after save.
-
-electronDownload(dlOpts);
-
 const APP_ARGS_FILE_PATH = path.join(__dirname, '..', 'nativefier.json');
 const appArgs = JSON.parse(fs.readFileSync(APP_ARGS_FILE_PATH, 'utf8'));
+
+let fileDownloadOptions = Object.assign({ saveAs: true }, appArgs.fileDownloadOptions); // default to show "Save As" dialog
+electronDownload(fileDownloadOptions);
 
 if (appArgs.processEnvs) {
   Object.keys(appArgs.processEnvs).forEach((key) => {
