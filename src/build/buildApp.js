@@ -112,7 +112,7 @@ function changeAppPackageJsonName(appPath, name, url) {
   const packageJsonPath = path.join(appPath, '/package.json');
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath));
   packageJson.name = normalizeAppName(name, url);
-  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson));
+  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
 }
 
 /**
@@ -132,7 +132,7 @@ function buildApp(src, dest, options, callback) {
       return;
     }
 
-    fs.writeFileSync(path.join(dest, '/nativefier.json'), JSON.stringify(appArgs));
+    fs.writeFileSync(path.join(dest, '/nativefier.json'), JSON.stringify(appArgs, null, 2));
 
     maybeCopyScripts(options.inject, dest)
       .catch((err) => {

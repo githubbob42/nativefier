@@ -12,7 +12,12 @@ import inferFlash from './helpers/inferFlash';
 
 const { isOSX } = helpers;
 
-electronDownload();
+// BR: set some default options for file downloads
+let dlOpts = {};
+dlOpts.saveAs = true; // force "Save As" dialog on downloads.
+dlOpts.openFolderWhenDone = false; // show file in FileExporer after save.
+
+electronDownload(dlOpts);
 
 const APP_ARGS_FILE_PATH = path.join(__dirname, '..', 'nativefier.json');
 const appArgs = JSON.parse(fs.readFileSync(APP_ARGS_FILE_PATH, 'utf8'));

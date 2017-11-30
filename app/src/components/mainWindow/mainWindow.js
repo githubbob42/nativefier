@@ -97,7 +97,7 @@ function createMainWindow(inpOptions, onAppQuit, setDockBadge) {
   if (options.maximize) {
     mainWindow.maximize();
     options.maximize = undefined;
-    fs.writeFileSync(path.join(__dirname, '..', 'nativefier.json'), JSON.stringify(options));
+    fs.writeFileSync(path.join(__dirname, '..', 'nativefier.json'), JSON.stringify(options, null, 2));
   }
 
   let currentZoom = options.zoom;
