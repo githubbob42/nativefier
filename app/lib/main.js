@@ -1450,16 +1450,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var isOSX = _helpers2.default.isOSX;
 
-// BR: set some default options for file downloads
-
-var dlOpts = {};
-dlOpts.saveAs = true; // force "Save As" dialog on downloads.
-dlOpts.openFolderWhenDone = false; // show file in FileExporer after save.
-
-(0, _electronDl2.default)(dlOpts);
 
 var APP_ARGS_FILE_PATH = _path2.default.join(__dirname, '..', 'nativefier.json');
 var appArgs = JSON.parse(_fs2.default.readFileSync(APP_ARGS_FILE_PATH, 'utf8'));
+
+var fileDownloadOptions = Object.assign({ saveAs: true }, appArgs.fileDownloadOptions); // default to show "Save As" dialog
+(0, _electronDl2.default)(fileDownloadOptions);
 
 if (appArgs.processEnvs) {
   Object.keys(appArgs.processEnvs).forEach(function (key) {
