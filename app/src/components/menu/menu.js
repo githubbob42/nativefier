@@ -1,4 +1,4 @@
-import { Menu, shell, clipboard } from 'electron';
+import { Menu, clipboard, dialog } from 'electron';
 
 /**
  * @param nativefierVersion
@@ -25,6 +25,7 @@ function createMenu({
   getCurrentUrl,
   clearAppData,
   disableDevTools,
+  options,
 }) {
   if (Menu.getApplicationMenu()) {
     return;
@@ -208,15 +209,23 @@ function createMenu({
       role: 'help',
       submenu: [
         {
-          label: `Built with Nativefier v${nativefierVersion}`,
+          label: 'About...',
           click: () => {
-            shell.openExternal('https://github.com/jiahaog/nativefier');
-          },
-        },
-        {
-          label: 'Report an Issue',
-          click: () => {
-            shell.openExternal('https://github.com/jiahaog/nativefier/issues');
+            dialog.showMessageBox(null, {
+              type: 'info',
+              buttons: [],
+              defaultId: 1,
+              title: 'About...',
+              // message: 'Copyright © 2005 - 2016 LiquidFrameworks, Inc. All Rights Reserved.'});
+              message: `${options.versionString.ProductName}\n${
+                options.appCopyright
+              }\nhttp://www.liquidframeworks.com\n\nVersion: ${
+                options.buildVersion
+              }\n${options.targetUrl}\n\nElectron: ${
+                process.versions.electron
+              } / Chrome: ${process.versions.chrome}`,
+            });
+            console.log(`Built with Nativefier v${nativefierVersion}`); // eslint-disable-line no-console
           },
         },
       ],
