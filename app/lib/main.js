@@ -4958,7 +4958,10 @@ function createMainWindow(inpOptions, onAppQuit, setDockBadge) {
       nodeIntegration: false,
       webSecurity: !options.insecure,
       preload: _path2.default.join(__dirname, 'static', 'preload.js'),
-      zoomFactor: options.zoom
+      zoomFactor: options.zoom,
+      // window.open return Window object(like in regular browsers), not BrowserWindowProxy
+      nativeWindowOpen: true,
+      affinity: 'main-window' // main window, and addition windows should work in one process
     }
   };
 
