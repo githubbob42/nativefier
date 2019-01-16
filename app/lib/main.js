@@ -115,15 +115,15 @@ var _mainWindow = __webpack_require__(31);
 
 var _mainWindow2 = _interopRequireDefault(_mainWindow);
 
-var _trayIcon = __webpack_require__(55);
+var _trayIcon = __webpack_require__(91);
 
 var _trayIcon2 = _interopRequireDefault(_trayIcon);
 
-var _helpers = __webpack_require__(47);
+var _helpers = __webpack_require__(83);
 
 var _helpers2 = _interopRequireDefault(_helpers);
 
-var _inferFlash = __webpack_require__(56);
+var _inferFlash = __webpack_require__(92);
 
 var _inferFlash2 = _interopRequireDefault(_inferFlash);
 
@@ -4515,19 +4515,23 @@ var _electronWindowState = __webpack_require__(32);
 
 var _electronWindowState2 = _interopRequireDefault(_electronWindowState);
 
-var _mainWindowHelpers = __webpack_require__(46);
+var _electronPdfWindow = __webpack_require__(46);
+
+var _electronPdfWindow2 = _interopRequireDefault(_electronPdfWindow);
+
+var _mainWindowHelpers = __webpack_require__(82);
 
 var _mainWindowHelpers2 = _interopRequireDefault(_mainWindowHelpers);
 
-var _helpers = __webpack_require__(47);
+var _helpers = __webpack_require__(83);
 
 var _helpers2 = _interopRequireDefault(_helpers);
 
-var _menu = __webpack_require__(51);
+var _menu = __webpack_require__(87);
 
 var _menu2 = _interopRequireDefault(_menu);
 
-var _contextMenu = __webpack_require__(52);
+var _contextMenu = __webpack_require__(88);
 
 var _contextMenu2 = _interopRequireDefault(_contextMenu);
 
@@ -4722,7 +4726,16 @@ function createMainWindow(inpOptions, onAppQuit, setDockBadge) {
   };
 
   var onWillNavigate = function onWillNavigate(event, urlToGo) {
-    if (!linkIsInternal(options.targetUrl, urlToGo, options.internalUrls)) {
+    if (urlToGo.split(/#|\?/)[0].split('.').pop().trim() === 'pdf') {
+      event.preventDefault();
+      // const PDFWindow = require('electron-pdf-window')
+      var win = new _electronPdfWindow2.default({
+        width: 800,
+        height: 600
+      });
+
+      win.loadURL(urlToGo);
+    } else if (!linkIsInternal(options.targetUrl, urlToGo, options.internalUrls)) {
       event.preventDefault();
       _electron.shell.openExternal(urlToGo);
     }
@@ -6211,6 +6224,2316 @@ function unsupported(object){
 /* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
+const isRenderer = __webpack_require__(47)
+const electron = __webpack_require__(17)
+const path = __webpack_require__(14)
+const readChunk = __webpack_require__(48)
+const fileType = __webpack_require__(52)
+const extend = __webpack_require__(53)
+const got = __webpack_require__(54)
+
+const BrowserWindow = isRenderer
+  ? electron.remote.BrowserWindow : electron.BrowserWindow
+
+const PDF_JS_PATH = path.join(__dirname, 'pdfjs', 'web', 'viewer.html')
+
+function isAlreadyLoadedWithPdfJs (url) {
+  return url.startsWith(`file://${PDF_JS_PATH}?file=`)
+}
+
+function isFile (url) {
+  return url.match(/^file:\/\//i)
+}
+
+function getMimeOfFile (url) {
+  const fileUrl = url.replace(/^file:\/\//i, '')
+  const buffer = readChunk.sync(fileUrl, 0, 262)
+  const ft = fileType(buffer)
+
+  return ft ? ft.mime : null
+}
+
+function hasPdfExtension (url) {
+  return url.match(/\.pdf$/i)
+}
+
+function isPDF (url) {
+  return new Promise((resolve, reject) => {
+    if (isAlreadyLoadedWithPdfJs(url)) {
+      resolve(false)
+    } else if (isFile(url)) {
+      resolve(getMimeOfFile(url) === 'application/pdf')
+    } else if (hasPdfExtension(url)) {
+      resolve(true)
+    } else {
+      got.head(url).then(res => {
+        if (res.headers.location) {
+          isPDF(res.headers.location).then(isit => resolve(isit))
+          .catch(err => reject(err))
+        } else {
+          resolve(res.headers['content-type'].indexOf('application/pdf') !== -1)
+        }
+      }).catch(err => reject(err))
+    }
+  })
+}
+
+class PDFWindow extends BrowserWindow {
+  constructor (opts) {
+    super(extend({}, opts, {
+      webPreferences: { nodeIntegration: false }
+    }))
+
+    this.webContents.on('will-navigate', (event, url) => {
+      event.preventDefault()
+      this.loadURL(url)
+    })
+
+    this.webContents.on('new-window', (event, url) => {
+      event.preventDefault()
+
+      event.newGuest = new PDFWindow()
+      event.newGuest.loadURL(url)
+    })
+  }
+
+  loadURL (url, options) {
+    isPDF(url).then(isit => {
+      if (isit) {
+        super.loadURL(`file://${
+          path.join(__dirname, 'pdfjs', 'web', 'viewer.html')}?file=${
+            decodeURIComponent(url)}`, options)
+      } else {
+        super.loadURL(url, options)
+      }
+    }).catch(() => super.loadURL(url, options))
+  }
+}
+
+PDFWindow.addSupport = function (browserWindow) {
+  browserWindow.webContents.on('will-navigate', (event, url) => {
+    event.preventDefault()
+    browserWindow.loadURL(url)
+  })
+
+  browserWindow.webContents.on('new-window', (event, url) => {
+    event.preventDefault()
+
+    event.newGuest = new PDFWindow()
+    event.newGuest.loadURL(url)
+  })
+
+  const load = browserWindow.loadURL
+  browserWindow.loadURL = function (url, options) {
+    isPDF(url).then(isit => {
+      if (isit) {
+        load.call(browserWindow, `file://${PDF_JS_PATH}?file=${
+          decodeURIComponent(url)}`, options)
+      } else {
+        load.call(browserWindow, url, options)
+      }
+    })
+  }
+}
+
+module.exports = PDFWindow
+
+
+/***/ }),
+/* 47 */
+/***/ (function(module, exports) {
+
+function isRenderer () {
+  // running in a web browser
+  if (typeof process === 'undefined') return true
+
+  // node-integration is disabled
+  if (!process) return true
+
+  // We're in node.js somehow
+  if (!process.type) return false
+
+  return process.type === 'renderer'
+}
+
+module.exports = isRenderer()
+
+
+/***/ }),
+/* 48 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+const fs = __webpack_require__(15);
+const pify = __webpack_require__(49);
+const Buffer = __webpack_require__(50).Buffer;
+
+const fsP = pify(fs);
+const fsReadP = pify(fs.read, {multiArgs: true});
+
+module.exports = (filepath, pos, len) => {
+	const buf = Buffer.alloc(len);
+
+	return fsP.open(filepath, 'r')
+		.then(fd =>
+			fsReadP(fd, buf, 0, len, pos)
+				.then(readArgs => fsP.close(fd)
+					.then(() => readArgs))
+		)
+		.then(readArgs => {
+			// TODO: Use destructuring when Node.js 6 is target
+			const bytesRead = readArgs[0];
+			let buf = readArgs[1];
+
+			if (bytesRead < len) {
+				buf = buf.slice(0, bytesRead);
+			}
+
+			return buf;
+		});
+};
+
+module.exports.sync = (filepath, pos, len) => {
+	let buf = Buffer.alloc(len);
+
+	const fd = fs.openSync(filepath, 'r');
+	const bytesRead = fs.readSync(fd, buf, 0, len, pos);
+
+	fs.closeSync(fd);
+
+	if (bytesRead < len) {
+		buf = buf.slice(0, bytesRead);
+	}
+
+	return buf;
+};
+
+
+/***/ }),
+/* 49 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+const processFn = (fn, opts) => function () {
+	const P = opts.promiseModule;
+	const args = new Array(arguments.length);
+
+	for (let i = 0; i < arguments.length; i++) {
+		args[i] = arguments[i];
+	}
+
+	return new P((resolve, reject) => {
+		if (opts.errorFirst) {
+			args.push(function (err, result) {
+				if (opts.multiArgs) {
+					const results = new Array(arguments.length - 1);
+
+					for (let i = 1; i < arguments.length; i++) {
+						results[i - 1] = arguments[i];
+					}
+
+					if (err) {
+						results.unshift(err);
+						reject(results);
+					} else {
+						resolve(results);
+					}
+				} else if (err) {
+					reject(err);
+				} else {
+					resolve(result);
+				}
+			});
+		} else {
+			args.push(function (result) {
+				if (opts.multiArgs) {
+					const results = new Array(arguments.length - 1);
+
+					for (let i = 0; i < arguments.length; i++) {
+						results[i] = arguments[i];
+					}
+
+					resolve(results);
+				} else {
+					resolve(result);
+				}
+			});
+		}
+
+		fn.apply(this, args);
+	});
+};
+
+module.exports = (obj, opts) => {
+	opts = Object.assign({
+		exclude: [/.+(Sync|Stream)$/],
+		errorFirst: true,
+		promiseModule: Promise
+	}, opts);
+
+	const filter = key => {
+		const match = pattern => typeof pattern === 'string' ? key === pattern : pattern.test(key);
+		return opts.include ? opts.include.some(match) : !opts.exclude.some(match);
+	};
+
+	let ret;
+	if (typeof obj === 'function') {
+		ret = function () {
+			if (opts.excludeMain) {
+				return obj.apply(this, arguments);
+			}
+
+			return processFn(obj, opts).apply(this, arguments);
+		};
+	} else {
+		ret = Object.create(Object.getPrototypeOf(obj));
+	}
+
+	for (const key in obj) { // eslint-disable-line guard-for-in
+		const x = obj[key];
+		ret[key] = typeof x === 'function' && filter(key) ? processFn(x, opts) : x;
+	}
+
+	return ret;
+};
+
+
+/***/ }),
+/* 50 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* eslint-disable node/no-deprecated-api */
+var buffer = __webpack_require__(51)
+var Buffer = buffer.Buffer
+
+// alternative to using Object.keys for old browsers
+function copyProps (src, dst) {
+  for (var key in src) {
+    dst[key] = src[key]
+  }
+}
+if (Buffer.from && Buffer.alloc && Buffer.allocUnsafe && Buffer.allocUnsafeSlow) {
+  module.exports = buffer
+} else {
+  // Copy properties from require('buffer')
+  copyProps(buffer, exports)
+  exports.Buffer = SafeBuffer
+}
+
+function SafeBuffer (arg, encodingOrOffset, length) {
+  return Buffer(arg, encodingOrOffset, length)
+}
+
+// Copy static methods from Buffer
+copyProps(Buffer, SafeBuffer)
+
+SafeBuffer.from = function (arg, encodingOrOffset, length) {
+  if (typeof arg === 'number') {
+    throw new TypeError('Argument must not be a number')
+  }
+  return Buffer(arg, encodingOrOffset, length)
+}
+
+SafeBuffer.alloc = function (size, fill, encoding) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  var buf = Buffer(size)
+  if (fill !== undefined) {
+    if (typeof encoding === 'string') {
+      buf.fill(fill, encoding)
+    } else {
+      buf.fill(fill)
+    }
+  } else {
+    buf.fill(0)
+  }
+  return buf
+}
+
+SafeBuffer.allocUnsafe = function (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  return Buffer(size)
+}
+
+SafeBuffer.allocUnsafeSlow = function (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  return buffer.SlowBuffer(size)
+}
+
+
+/***/ }),
+/* 51 */
+/***/ (function(module, exports) {
+
+module.exports = require("buffer");
+
+/***/ }),
+/* 52 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+module.exports = function (buf) {
+	if (!(buf && buf.length > 1)) {
+		return null;
+	}
+
+	if (buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) {
+		return {
+			ext: 'jpg',
+			mime: 'image/jpeg'
+		};
+	}
+
+	if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) {
+		return {
+			ext: 'png',
+			mime: 'image/png'
+		};
+	}
+
+	if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46) {
+		return {
+			ext: 'gif',
+			mime: 'image/gif'
+		};
+	}
+
+	if (buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50) {
+		return {
+			ext: 'webp',
+			mime: 'image/webp'
+		};
+	}
+
+	if (buf[0] === 0x46 && buf[1] === 0x4C && buf[2] === 0x49 && buf[3] === 0x46) {
+		return {
+			ext: 'flif',
+			mime: 'image/flif'
+		};
+	}
+
+	// needs to be before `tif` check
+	if (((buf[0] === 0x49 && buf[1] === 0x49 && buf[2] === 0x2A && buf[3] === 0x0) || (buf[0] === 0x4D && buf[1] === 0x4D && buf[2] === 0x0 && buf[3] === 0x2A)) && buf[8] === 0x43 && buf[9] === 0x52) {
+		return {
+			ext: 'cr2',
+			mime: 'image/x-canon-cr2'
+		};
+	}
+
+	if ((buf[0] === 0x49 && buf[1] === 0x49 && buf[2] === 0x2A && buf[3] === 0x0) || (buf[0] === 0x4D && buf[1] === 0x4D && buf[2] === 0x0 && buf[3] === 0x2A)) {
+		return {
+			ext: 'tif',
+			mime: 'image/tiff'
+		};
+	}
+
+	if (buf[0] === 0x42 && buf[1] === 0x4D) {
+		return {
+			ext: 'bmp',
+			mime: 'image/bmp'
+		};
+	}
+
+	if (buf[0] === 0x49 && buf[1] === 0x49 && buf[2] === 0xBC) {
+		return {
+			ext: 'jxr',
+			mime: 'image/vnd.ms-photo'
+		};
+	}
+
+	if (buf[0] === 0x38 && buf[1] === 0x42 && buf[2] === 0x50 && buf[3] === 0x53) {
+		return {
+			ext: 'psd',
+			mime: 'image/vnd.adobe.photoshop'
+		};
+	}
+
+	// needs to be before `zip` check
+	if (buf[0] === 0x50 && buf[1] === 0x4B && buf[2] === 0x3 && buf[3] === 0x4 && buf[30] === 0x6D && buf[31] === 0x69 && buf[32] === 0x6D && buf[33] === 0x65 && buf[34] === 0x74 && buf[35] === 0x79 && buf[36] === 0x70 && buf[37] === 0x65 && buf[38] === 0x61 && buf[39] === 0x70 && buf[40] === 0x70 && buf[41] === 0x6C && buf[42] === 0x69 && buf[43] === 0x63 && buf[44] === 0x61 && buf[45] === 0x74 && buf[46] === 0x69 && buf[47] === 0x6F && buf[48] === 0x6E && buf[49] === 0x2F && buf[50] === 0x65 && buf[51] === 0x70 && buf[52] === 0x75 && buf[53] === 0x62 && buf[54] === 0x2B && buf[55] === 0x7A && buf[56] === 0x69 && buf[57] === 0x70) {
+		return {
+			ext: 'epub',
+			mime: 'application/epub+zip'
+		};
+	}
+
+	// needs to be before `zip` check
+	// assumes signed .xpi from addons.mozilla.org
+	if (buf[0] === 0x50 && buf[1] === 0x4B && buf[2] === 0x3 && buf[3] === 0x4 && buf[30] === 0x4D && buf[31] === 0x45 && buf[32] === 0x54 && buf[33] === 0x41 && buf[34] === 0x2D && buf[35] === 0x49 && buf[36] === 0x4E && buf[37] === 0x46 && buf[38] === 0x2F && buf[39] === 0x6D && buf[40] === 0x6F && buf[41] === 0x7A && buf[42] === 0x69 && buf[43] === 0x6C && buf[44] === 0x6C && buf[45] === 0x61 && buf[46] === 0x2E && buf[47] === 0x72 && buf[48] === 0x73 && buf[49] === 0x61) {
+		return {
+			ext: 'xpi',
+			mime: 'application/x-xpinstall'
+		};
+	}
+
+	if (buf[0] === 0x50 && buf[1] === 0x4B && (buf[2] === 0x3 || buf[2] === 0x5 || buf[2] === 0x7) && (buf[3] === 0x4 || buf[3] === 0x6 || buf[3] === 0x8)) {
+		return {
+			ext: 'zip',
+			mime: 'application/zip'
+		};
+	}
+
+	if (buf[257] === 0x75 && buf[258] === 0x73 && buf[259] === 0x74 && buf[260] === 0x61 && buf[261] === 0x72) {
+		return {
+			ext: 'tar',
+			mime: 'application/x-tar'
+		};
+	}
+
+	if (buf[0] === 0x52 && buf[1] === 0x61 && buf[2] === 0x72 && buf[3] === 0x21 && buf[4] === 0x1A && buf[5] === 0x7 && (buf[6] === 0x0 || buf[6] === 0x1)) {
+		return {
+			ext: 'rar',
+			mime: 'application/x-rar-compressed'
+		};
+	}
+
+	if (buf[0] === 0x1F && buf[1] === 0x8B && buf[2] === 0x8) {
+		return {
+			ext: 'gz',
+			mime: 'application/gzip'
+		};
+	}
+
+	if (buf[0] === 0x42 && buf[1] === 0x5A && buf[2] === 0x68) {
+		return {
+			ext: 'bz2',
+			mime: 'application/x-bzip2'
+		};
+	}
+
+	if (buf[0] === 0x37 && buf[1] === 0x7A && buf[2] === 0xBC && buf[3] === 0xAF && buf[4] === 0x27 && buf[5] === 0x1C) {
+		return {
+			ext: '7z',
+			mime: 'application/x-7z-compressed'
+		};
+	}
+
+	if (buf[0] === 0x78 && buf[1] === 0x01) {
+		return {
+			ext: 'dmg',
+			mime: 'application/x-apple-diskimage'
+		};
+	}
+
+	if (
+		(buf[0] === 0x0 && buf[1] === 0x0 && buf[2] === 0x0 && (buf[3] === 0x18 || buf[3] === 0x20) && buf[4] === 0x66 && buf[5] === 0x74 && buf[6] === 0x79 && buf[7] === 0x70) ||
+		(buf[0] === 0x33 && buf[1] === 0x67 && buf[2] === 0x70 && buf[3] === 0x35) ||
+		(buf[0] === 0x0 && buf[1] === 0x0 && buf[2] === 0x0 && buf[3] === 0x1C && buf[4] === 0x66 && buf[5] === 0x74 && buf[6] === 0x79 && buf[7] === 0x70 && buf[8] === 0x6D && buf[9] === 0x70 && buf[10] === 0x34 && buf[11] === 0x32 && buf[16] === 0x6D && buf[17] === 0x70 && buf[18] === 0x34 && buf[19] === 0x31 && buf[20] === 0x6D && buf[21] === 0x70 && buf[22] === 0x34 && buf[23] === 0x32 && buf[24] === 0x69 && buf[25] === 0x73 && buf[26] === 0x6F && buf[27] === 0x6D) ||
+		(buf[0] === 0x0 && buf[1] === 0x0 && buf[2] === 0x0 && buf[3] === 0x1C && buf[4] === 0x66 && buf[5] === 0x74 && buf[6] === 0x79 && buf[7] === 0x70 && buf[8] === 0x69 && buf[9] === 0x73 && buf[10] === 0x6F && buf[11] === 0x6D) ||
+		(buf[0] === 0x0 && buf[1] === 0x0 && buf[2] === 0x0 && buf[3] === 0x1c && buf[4] === 0x66 && buf[5] === 0x74 && buf[6] === 0x79 && buf[7] === 0x70 && buf[8] === 0x6D && buf[9] === 0x70 && buf[10] === 0x34 && buf[11] === 0x32 && buf[12] === 0x0 && buf[13] === 0x0 && buf[14] === 0x0 && buf[15] === 0x0)
+	) {
+		return {
+			ext: 'mp4',
+			mime: 'video/mp4'
+		};
+	}
+
+	if ((buf[0] === 0x0 && buf[1] === 0x0 && buf[2] === 0x0 && buf[3] === 0x1C && buf[4] === 0x66 && buf[5] === 0x74 && buf[6] === 0x79 && buf[7] === 0x70 && buf[8] === 0x4D && buf[9] === 0x34 && buf[10] === 0x56)) {
+		return {
+			ext: 'm4v',
+			mime: 'video/x-m4v'
+		};
+	}
+
+	if (buf[0] === 0x4D && buf[1] === 0x54 && buf[2] === 0x68 && buf[3] === 0x64) {
+		return {
+			ext: 'mid',
+			mime: 'audio/midi'
+		};
+	}
+
+	// needs to be before the `webm` check
+	if (buf[31] === 0x6D && buf[32] === 0x61 && buf[33] === 0x74 && buf[34] === 0x72 && buf[35] === 0x6f && buf[36] === 0x73 && buf[37] === 0x6B && buf[38] === 0x61) {
+		return {
+			ext: 'mkv',
+			mime: 'video/x-matroska'
+		};
+	}
+
+	if (buf[0] === 0x1A && buf[1] === 0x45 && buf[2] === 0xDF && buf[3] === 0xA3) {
+		return {
+			ext: 'webm',
+			mime: 'video/webm'
+		};
+	}
+
+	if (buf[0] === 0x0 && buf[1] === 0x0 && buf[2] === 0x0 && buf[3] === 0x14 && buf[4] === 0x66 && buf[5] === 0x74 && buf[6] === 0x79 && buf[7] === 0x70) {
+		return {
+			ext: 'mov',
+			mime: 'video/quicktime'
+		};
+	}
+
+	if (buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 && buf[8] === 0x41 && buf[9] === 0x56 && buf[10] === 0x49) {
+		return {
+			ext: 'avi',
+			mime: 'video/x-msvideo'
+		};
+	}
+
+	if (buf[0] === 0x30 && buf[1] === 0x26 && buf[2] === 0xB2 && buf[3] === 0x75 && buf[4] === 0x8E && buf[5] === 0x66 && buf[6] === 0xCF && buf[7] === 0x11 && buf[8] === 0xA6 && buf[9] === 0xD9) {
+		return {
+			ext: 'wmv',
+			mime: 'video/x-ms-wmv'
+		};
+	}
+
+	if (buf[0] === 0x0 && buf[1] === 0x0 && buf[2] === 0x1 && buf[3].toString(16)[0] === 'b') {
+		return {
+			ext: 'mpg',
+			mime: 'video/mpeg'
+		};
+	}
+
+	if ((buf[0] === 0x49 && buf[1] === 0x44 && buf[2] === 0x33) || (buf[0] === 0xFF && buf[1] === 0xfb)) {
+		return {
+			ext: 'mp3',
+			mime: 'audio/mpeg'
+		};
+	}
+
+	if ((buf[4] === 0x66 && buf[5] === 0x74 && buf[6] === 0x79 && buf[7] === 0x70 && buf[8] === 0x4D && buf[9] === 0x34 && buf[10] === 0x41) || (buf[0] === 0x4D && buf[1] === 0x34 && buf[2] === 0x41 && buf[3] === 0x20)) {
+		return {
+			ext: 'm4a',
+			mime: 'audio/m4a'
+		};
+	}
+
+	// needs to be before `ogg` check
+	if (buf[28] === 0x4F && buf[29] === 0x70 && buf[30] === 0x75 && buf[31] === 0x73 && buf[32] === 0x48 && buf[33] === 0x65 && buf[34] === 0x61 && buf[35] === 0x64) {
+		return {
+			ext: 'opus',
+			mime: 'audio/opus'
+		};
+	}
+
+	if (buf[0] === 0x4F && buf[1] === 0x67 && buf[2] === 0x67 && buf[3] === 0x53) {
+		return {
+			ext: 'ogg',
+			mime: 'audio/ogg'
+		};
+	}
+
+	if (buf[0] === 0x66 && buf[1] === 0x4C && buf[2] === 0x61 && buf[3] === 0x43) {
+		return {
+			ext: 'flac',
+			mime: 'audio/x-flac'
+		};
+	}
+
+	if (buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 && buf[8] === 0x57 && buf[9] === 0x41 && buf[10] === 0x56 && buf[11] === 0x45) {
+		return {
+			ext: 'wav',
+			mime: 'audio/x-wav'
+		};
+	}
+
+	if (buf[0] === 0x23 && buf[1] === 0x21 && buf[2] === 0x41 && buf[3] === 0x4D && buf[4] === 0x52 && buf[5] === 0x0A) {
+		return {
+			ext: 'amr',
+			mime: 'audio/amr'
+		};
+	}
+
+	if (buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) {
+		return {
+			ext: 'pdf',
+			mime: 'application/pdf'
+		};
+	}
+
+	if (buf[0] === 0x4D && buf[1] === 0x5A) {
+		return {
+			ext: 'exe',
+			mime: 'application/x-msdownload'
+		};
+	}
+
+	if ((buf[0] === 0x43 || buf[0] === 0x46) && buf[1] === 0x57 && buf[2] === 0x53) {
+		return {
+			ext: 'swf',
+			mime: 'application/x-shockwave-flash'
+		};
+	}
+
+	if (buf[0] === 0x7B && buf[1] === 0x5C && buf[2] === 0x72 && buf[3] === 0x74 && buf[4] === 0x66) {
+		return {
+			ext: 'rtf',
+			mime: 'application/rtf'
+		};
+	}
+
+	if (
+		(buf[0] === 0x77 && buf[1] === 0x4F && buf[2] === 0x46 && buf[3] === 0x46) &&
+		(
+			(buf[4] === 0x00 && buf[5] === 0x01 && buf[6] === 0x00 && buf[7] === 0x00) ||
+			(buf[4] === 0x4F && buf[5] === 0x54 && buf[6] === 0x54 && buf[7] === 0x4F)
+		)
+	) {
+		return {
+			ext: 'woff',
+			mime: 'application/font-woff'
+		};
+	}
+
+	if (
+		(buf[0] === 0x77 && buf[1] === 0x4F && buf[2] === 0x46 && buf[3] === 0x32) &&
+		(
+			(buf[4] === 0x00 && buf[5] === 0x01 && buf[6] === 0x00 && buf[7] === 0x00) ||
+			(buf[4] === 0x4F && buf[5] === 0x54 && buf[6] === 0x54 && buf[7] === 0x4F)
+		)
+	) {
+		return {
+			ext: 'woff2',
+			mime: 'application/font-woff'
+		};
+	}
+
+	if (
+		(buf[34] === 0x4C && buf[35] === 0x50) &&
+		(
+			(buf[8] === 0x00 && buf[9] === 0x00 && buf[10] === 0x01) ||
+			(buf[8] === 0x01 && buf[9] === 0x00 && buf[10] === 0x02) ||
+			(buf[8] === 0x02 && buf[9] === 0x00 && buf[10] === 0x02)
+		)
+	) {
+		return {
+			ext: 'eot',
+			mime: 'application/octet-stream'
+		};
+	}
+
+	if (buf[0] === 0x00 && buf[1] === 0x01 && buf[2] === 0x00 && buf[3] === 0x00 && buf[4] === 0x00) {
+		return {
+			ext: 'ttf',
+			mime: 'application/font-sfnt'
+		};
+	}
+
+	if (buf[0] === 0x4F && buf[1] === 0x54 && buf[2] === 0x54 && buf[3] === 0x4F && buf[4] === 0x00) {
+		return {
+			ext: 'otf',
+			mime: 'application/font-sfnt'
+		};
+	}
+
+	if (buf[0] === 0x00 && buf[1] === 0x00 && buf[2] === 0x01 && buf[3] === 0x00) {
+		return {
+			ext: 'ico',
+			mime: 'image/x-icon'
+		};
+	}
+
+	if (buf[0] === 0x46 && buf[1] === 0x4C && buf[2] === 0x56 && buf[3] === 0x01) {
+		return {
+			ext: 'flv',
+			mime: 'video/x-flv'
+		};
+	}
+
+	if (buf[0] === 0x25 && buf[1] === 0x21) {
+		return {
+			ext: 'ps',
+			mime: 'application/postscript'
+		};
+	}
+
+	if (buf[0] === 0xFD && buf[1] === 0x37 && buf[2] === 0x7A && buf[3] === 0x58 && buf[4] === 0x5A && buf[5] === 0x00) {
+		return {
+			ext: 'xz',
+			mime: 'application/x-xz'
+		};
+	}
+
+	if (buf[0] === 0x53 && buf[1] === 0x51 && buf[2] === 0x4C && buf[3] === 0x69) {
+		return {
+			ext: 'sqlite',
+			mime: 'application/x-sqlite3'
+		};
+	}
+
+	if (buf[0] === 0x4E && buf[1] === 0x45 && buf[2] === 0x53 && buf[3] === 0x1A) {
+		return {
+			ext: 'nes',
+			mime: 'application/x-nintendo-nes-rom'
+		};
+	}
+
+	if (buf[0] === 0x43 && buf[1] === 0x72 && buf[2] === 0x32 && buf[3] === 0x34) {
+		return {
+			ext: 'crx',
+			mime: 'application/x-google-chrome-extension'
+		};
+	}
+
+	if (
+		(buf[0] === 0x4D && buf[1] === 0x53 && buf[2] === 0x43 && buf[3] === 0x46) ||
+		(buf[0] === 0x49 && buf[1] === 0x53 && buf[2] === 0x63 && buf[3] === 0x28)
+	) {
+		return {
+			ext: 'cab',
+			mime: 'application/vnd.ms-cab-compressed'
+		};
+	}
+
+	// needs to be before `ar` check
+	if (buf[0] === 0x21 && buf[1] === 0x3C && buf[2] === 0x61 && buf[3] === 0x72 && buf[4] === 0x63 && buf[5] === 0x68 && buf[6] === 0x3E && buf[7] === 0x0A && buf[8] === 0x64 && buf[9] === 0x65 && buf[10] === 0x62 && buf[11] === 0x69 && buf[12] === 0x61 && buf[13] === 0x6E && buf[14] === 0x2D && buf[15] === 0x62 && buf[16] === 0x69 && buf[17] === 0x6E && buf[18] === 0x61 && buf[19] === 0x72 && buf[20] === 0x79) {
+		return {
+			ext: 'deb',
+			mime: 'application/x-deb'
+		};
+	}
+
+	if (buf[0] === 0x21 && buf[1] === 0x3C && buf[2] === 0x61 && buf[3] === 0x72 && buf[4] === 0x63 && buf[5] === 0x68 && buf[6] === 0x3E) {
+		return {
+			ext: 'ar',
+			mime: 'application/x-unix-archive'
+		};
+	}
+
+	if (buf[0] === 0xED && buf[1] === 0xAB && buf[2] === 0xEE && buf[3] === 0xDB) {
+		return {
+			ext: 'rpm',
+			mime: 'application/x-rpm'
+		};
+	}
+
+	if (
+		(buf[0] === 0x1F && buf[1] === 0xA0) ||
+		(buf[0] === 0x1F && buf[1] === 0x9D)
+	) {
+		return {
+			ext: 'Z',
+			mime: 'application/x-compress'
+		};
+	}
+
+	if (buf[0] === 0x4C && buf[1] === 0x5A && buf[2] === 0x49 && buf[3] === 0x50) {
+		return {
+			ext: 'lz',
+			mime: 'application/x-lzip'
+		};
+	}
+
+	if (buf[0] === 0xD0 && buf[1] === 0xCF && buf[2] === 0x11 && buf[3] === 0xE0 && buf[4] === 0xA1 && buf[5] === 0xB1 && buf[6] === 0x1A && buf[7] === 0xE1) {
+		return {
+			ext: 'msi',
+			mime: 'application/x-msi'
+		};
+	}
+
+	return null;
+};
+
+
+/***/ }),
+/* 53 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/*!
+ * @description Recursive object extending
+ * @author Viacheslav Lotsmanov <lotsmanov89@gmail.com>
+ * @license MIT
+ *
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2013-2015 Viacheslav Lotsmanov
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+
+
+function isSpecificValue(val) {
+	return (
+		val instanceof Buffer
+		|| val instanceof Date
+		|| val instanceof RegExp
+	) ? true : false;
+}
+
+function cloneSpecificValue(val) {
+	if (val instanceof Buffer) {
+		var x = new Buffer(val.length);
+		val.copy(x);
+		return x;
+	} else if (val instanceof Date) {
+		return new Date(val.getTime());
+	} else if (val instanceof RegExp) {
+		return new RegExp(val);
+	} else {
+		throw new Error('Unexpected situation');
+	}
+}
+
+/**
+ * Recursive cloning array.
+ */
+function deepCloneArray(arr) {
+	var clone = [];
+	arr.forEach(function (item, index) {
+		if (typeof item === 'object' && item !== null) {
+			if (Array.isArray(item)) {
+				clone[index] = deepCloneArray(item);
+			} else if (isSpecificValue(item)) {
+				clone[index] = cloneSpecificValue(item);
+			} else {
+				clone[index] = deepExtend({}, item);
+			}
+		} else {
+			clone[index] = item;
+		}
+	});
+	return clone;
+}
+
+/**
+ * Extening object that entered in first argument.
+ *
+ * Returns extended object or false if have no target object or incorrect type.
+ *
+ * If you wish to clone source object (without modify it), just use empty new
+ * object as first argument, like this:
+ *   deepExtend({}, yourObj_1, [yourObj_N]);
+ */
+var deepExtend = module.exports = function (/*obj_1, [obj_2], [obj_N]*/) {
+	if (arguments.length < 1 || typeof arguments[0] !== 'object') {
+		return false;
+	}
+
+	if (arguments.length < 2) {
+		return arguments[0];
+	}
+
+	var target = arguments[0];
+
+	// convert arguments to array and cut off target object
+	var args = Array.prototype.slice.call(arguments, 1);
+
+	var val, src, clone;
+
+	args.forEach(function (obj) {
+		// skip argument if isn't an object, is null, or is an array
+		if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
+			return;
+		}
+
+		Object.keys(obj).forEach(function (key) {
+			src = target[key]; // source value
+			val = obj[key]; // new value
+
+			// recursion prevention
+			if (val === target) {
+				return;
+
+			/**
+			 * if new value isn't object then just overwrite by new value
+			 * instead of extending.
+			 */
+			} else if (typeof val !== 'object' || val === null) {
+				target[key] = val;
+				return;
+
+			// just clone arrays (and recursive clone objects inside)
+			} else if (Array.isArray(val)) {
+				target[key] = deepCloneArray(val);
+				return;
+
+			// custom cloning and overwrite for specific objects
+			} else if (isSpecificValue(val)) {
+				target[key] = cloneSpecificValue(val);
+				return;
+
+			// overwrite by new value if source isn't object or array
+			} else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
+				target[key] = deepExtend({}, val);
+				return;
+
+			// source value and new value is objects both, extending...
+			} else {
+				target[key] = deepExtend(src, val);
+				return;
+			}
+		});
+	});
+
+	return target;
+}
+
+
+/***/ }),
+/* 54 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+const EventEmitter = __webpack_require__(55);
+const http = __webpack_require__(56);
+const https = __webpack_require__(57);
+const PassThrough = __webpack_require__(39).PassThrough;
+const urlLib = __webpack_require__(58);
+const querystring = __webpack_require__(59);
+const duplexer3 = __webpack_require__(60);
+const isStream = __webpack_require__(61);
+const getStream = __webpack_require__(62);
+const timedOut = __webpack_require__(64);
+const urlParseLax = __webpack_require__(65);
+const urlToOptions = __webpack_require__(67);
+const lowercaseKeys = __webpack_require__(68);
+const decompressResponse = __webpack_require__(69);
+const isRetryAllowed = __webpack_require__(72);
+const Buffer = __webpack_require__(50).Buffer;
+const isURL = __webpack_require__(73);
+const isPlainObj = __webpack_require__(77);
+const PCancelable = __webpack_require__(78);
+const pTimeout = __webpack_require__(79);
+const pkg = __webpack_require__(81);
+
+const getMethodRedirectCodes = new Set([300, 301, 302, 303, 304, 305, 307, 308]);
+const allMethodRedirectCodes = new Set([300, 303, 307, 308]);
+
+function requestAsEventEmitter(opts) {
+	opts = opts || {};
+
+	const ee = new EventEmitter();
+	const requestUrl = opts.href || urlLib.resolve(urlLib.format(opts), opts.path);
+	const redirects = [];
+	let retryCount = 0;
+	let redirectUrl;
+
+	const get = opts => {
+		if (opts.protocol !== 'http:' && opts.protocol !== 'https:') {
+			ee.emit('error', new got.UnsupportedProtocolError(opts));
+			return;
+		}
+
+		let fn = opts.protocol === 'https:' ? https : http;
+
+		if (opts.useElectronNet && process.versions.electron) {
+			const electron = __webpack_require__(17);
+			fn = electron.net || electron.remote.net;
+		}
+
+		const req = fn.request(opts, res => {
+			const statusCode = res.statusCode;
+
+			res.url = redirectUrl || requestUrl;
+			res.requestUrl = requestUrl;
+
+			const followRedirect = opts.followRedirect && 'location' in res.headers;
+			const redirectGet = followRedirect && getMethodRedirectCodes.has(statusCode);
+			const redirectAll = followRedirect && allMethodRedirectCodes.has(statusCode);
+
+			if (redirectAll || (redirectGet && (opts.method === 'GET' || opts.method === 'HEAD'))) {
+				res.resume();
+
+				if (statusCode === 303) {
+					// Server responded with "see other", indicating that the resource exists at another location,
+					// and the client should request it from that location via GET or HEAD.
+					opts.method = 'GET';
+				}
+
+				if (redirects.length >= 10) {
+					ee.emit('error', new got.MaxRedirectsError(statusCode, redirects, opts), null, res);
+					return;
+				}
+
+				const bufferString = Buffer.from(res.headers.location, 'binary').toString();
+
+				redirectUrl = urlLib.resolve(urlLib.format(opts), bufferString);
+
+				redirects.push(redirectUrl);
+
+				const redirectOpts = Object.assign({}, opts, urlLib.parse(redirectUrl));
+
+				ee.emit('redirect', res, redirectOpts);
+
+				get(redirectOpts);
+
+				return;
+			}
+
+			setImmediate(() => {
+				const response = opts.decompress === true &&
+					typeof decompressResponse === 'function' &&
+					req.method !== 'HEAD' ? decompressResponse(res) : res;
+
+				if (!opts.decompress && ['gzip', 'deflate'].indexOf(res.headers['content-encoding']) !== -1) {
+					opts.encoding = null;
+				}
+
+				response.redirectUrls = redirects;
+
+				ee.emit('response', response);
+			});
+		});
+
+		req.once('error', err => {
+			const backoff = opts.retries(++retryCount, err);
+
+			if (backoff) {
+				setTimeout(get, backoff, opts);
+				return;
+			}
+
+			ee.emit('error', new got.RequestError(err, opts));
+		});
+
+		if (opts.gotTimeout) {
+			timedOut(req, opts.gotTimeout);
+		}
+
+		setImmediate(() => {
+			ee.emit('request', req);
+		});
+	};
+
+	setImmediate(() => {
+		get(opts);
+	});
+	return ee;
+}
+
+function asPromise(opts) {
+	const timeoutFn = requestPromise => opts.gotTimeout && opts.gotTimeout.request ?
+		pTimeout(requestPromise, opts.gotTimeout.request, new got.RequestError({message: 'Request timed out', code: 'ETIMEDOUT'}, opts)) :
+		requestPromise;
+
+	return timeoutFn(new PCancelable((onCancel, resolve, reject) => {
+		const ee = requestAsEventEmitter(opts);
+		let cancelOnRequest = false;
+
+		onCancel(() => {
+			cancelOnRequest = true;
+		});
+
+		ee.on('request', req => {
+			if (cancelOnRequest) {
+				req.abort();
+			}
+
+			onCancel(() => {
+				req.abort();
+			});
+
+			if (isStream(opts.body)) {
+				opts.body.pipe(req);
+				opts.body = undefined;
+				return;
+			}
+
+			req.end(opts.body);
+		});
+
+		ee.on('response', res => {
+			const stream = opts.encoding === null ? getStream.buffer(res) : getStream(res, opts);
+
+			stream
+				.catch(err => reject(new got.ReadError(err, opts)))
+				.then(data => {
+					const statusCode = res.statusCode;
+					const limitStatusCode = opts.followRedirect ? 299 : 399;
+
+					res.body = data;
+
+					if (opts.json && res.body) {
+						try {
+							res.body = JSON.parse(res.body);
+						} catch (e) {
+							if (statusCode >= 200 && statusCode < 300) {
+								throw new got.ParseError(e, statusCode, opts, data);
+							}
+						}
+					}
+
+					if (statusCode !== 304 && (statusCode < 200 || statusCode > limitStatusCode)) {
+						throw new got.HTTPError(statusCode, res.headers, opts);
+					}
+
+					resolve(res);
+				})
+				.catch(err => {
+					Object.defineProperty(err, 'response', {value: res});
+					reject(err);
+				});
+		});
+
+		ee.on('error', reject);
+	}));
+}
+
+function asStream(opts) {
+	const input = new PassThrough();
+	const output = new PassThrough();
+	const proxy = duplexer3(input, output);
+	let timeout;
+
+	if (opts.gotTimeout && opts.gotTimeout.request) {
+		timeout = setTimeout(() => {
+			proxy.emit('error', new got.RequestError({message: 'Request timed out', code: 'ETIMEDOUT'}, opts));
+		}, opts.gotTimeout.request);
+	}
+
+	if (opts.json) {
+		throw new Error('got can not be used as stream when options.json is used');
+	}
+
+	if (opts.body) {
+		proxy.write = () => {
+			throw new Error('got\'s stream is not writable when options.body is used');
+		};
+	}
+
+	const ee = requestAsEventEmitter(opts);
+
+	ee.on('request', req => {
+		proxy.emit('request', req);
+
+		if (isStream(opts.body)) {
+			opts.body.pipe(req);
+			return;
+		}
+
+		if (opts.body) {
+			req.end(opts.body);
+			return;
+		}
+
+		if (opts.method === 'POST' || opts.method === 'PUT' || opts.method === 'PATCH') {
+			input.pipe(req);
+			return;
+		}
+
+		req.end();
+	});
+
+	ee.on('response', res => {
+		clearTimeout(timeout);
+
+		const statusCode = res.statusCode;
+
+		res.pipe(output);
+
+		if (statusCode !== 304 && (statusCode < 200 || statusCode > 299)) {
+			proxy.emit('error', new got.HTTPError(statusCode, res.headers, opts), null, res);
+			return;
+		}
+
+		proxy.emit('response', res);
+	});
+
+	ee.on('redirect', proxy.emit.bind(proxy, 'redirect'));
+	ee.on('error', proxy.emit.bind(proxy, 'error'));
+
+	return proxy;
+}
+
+function normalizeArguments(url, opts) {
+	if (typeof url !== 'string' && typeof url !== 'object') {
+		throw new TypeError(`Parameter \`url\` must be a string or object, not ${typeof url}`);
+	} else if (typeof url === 'string') {
+		url = url.replace(/^unix:/, 'http://$&');
+		url = urlParseLax(url);
+	} else if (isURL.lenient(url)) {
+		url = urlToOptions(url);
+	}
+
+	if (url.auth) {
+		throw new Error('Basic authentication must be done with auth option');
+	}
+
+	opts = Object.assign(
+		{
+			path: '',
+			retries: 2,
+			decompress: true,
+			useElectronNet: true
+		},
+		url,
+		{
+			protocol: url.protocol || 'http:' // Override both null/undefined with default protocol
+		},
+		opts
+	);
+
+	opts.headers = Object.assign({
+		'user-agent': `${pkg.name}/${pkg.version} (https://github.com/sindresorhus/got)`,
+		'accept-encoding': 'gzip,deflate'
+	}, lowercaseKeys(opts.headers));
+
+	const query = opts.query;
+
+	if (query) {
+		if (typeof query !== 'string') {
+			opts.query = querystring.stringify(query);
+		}
+
+		opts.path = `${opts.path.split('?')[0]}?${opts.query}`;
+		delete opts.query;
+	}
+
+	if (opts.json && opts.headers.accept === undefined) {
+		opts.headers.accept = 'application/json';
+	}
+
+	const body = opts.body;
+	if (body !== null && body !== undefined) {
+		const headers = opts.headers;
+		if (!isStream(body) && typeof body !== 'string' && !Buffer.isBuffer(body) && !(opts.form || opts.json)) {
+			throw new TypeError('options.body must be a ReadableStream, string, Buffer or plain Object');
+		}
+
+		const canBodyBeStringified = isPlainObj(body) || Array.isArray(body);
+		if ((opts.form || opts.json) && !canBodyBeStringified) {
+			throw new TypeError('options.body must be a plain Object or Array when options.form or options.json is used');
+		}
+
+		if (isStream(body) && typeof body.getBoundary === 'function') {
+			// Special case for https://github.com/form-data/form-data
+			headers['content-type'] = headers['content-type'] || `multipart/form-data; boundary=${body.getBoundary()}`;
+		} else if (opts.form && canBodyBeStringified) {
+			headers['content-type'] = headers['content-type'] || 'application/x-www-form-urlencoded';
+			opts.body = querystring.stringify(body);
+		} else if (opts.json && canBodyBeStringified) {
+			headers['content-type'] = headers['content-type'] || 'application/json';
+			opts.body = JSON.stringify(body);
+		}
+
+		if (headers['content-length'] === undefined && headers['transfer-encoding'] === undefined && !isStream(body)) {
+			const length = typeof opts.body === 'string' ? Buffer.byteLength(opts.body) : opts.body.length;
+			headers['content-length'] = length;
+		}
+
+		opts.method = (opts.method || 'POST').toUpperCase();
+	} else {
+		opts.method = (opts.method || 'GET').toUpperCase();
+	}
+
+	if (opts.hostname === 'unix') {
+		const matches = /(.+?):(.+)/.exec(opts.path);
+
+		if (matches) {
+			opts.socketPath = matches[1];
+			opts.path = matches[2];
+			opts.host = null;
+		}
+	}
+
+	if (typeof opts.retries !== 'function') {
+		const retries = opts.retries;
+
+		opts.retries = (iter, err) => {
+			if (iter > retries || !isRetryAllowed(err)) {
+				return 0;
+			}
+
+			const noise = Math.random() * 100;
+
+			return ((1 << iter) * 1000) + noise;
+		};
+	}
+
+	if (opts.followRedirect === undefined) {
+		opts.followRedirect = true;
+	}
+
+	if (opts.timeout) {
+		if (typeof opts.timeout === 'number') {
+			opts.gotTimeout = {request: opts.timeout};
+		} else {
+			opts.gotTimeout = opts.timeout;
+		}
+		delete opts.timeout;
+	}
+
+	return opts;
+}
+
+function got(url, opts) {
+	try {
+		return asPromise(normalizeArguments(url, opts));
+	} catch (err) {
+		return Promise.reject(err);
+	}
+}
+
+got.stream = (url, opts) => asStream(normalizeArguments(url, opts));
+
+const methods = [
+	'get',
+	'post',
+	'put',
+	'patch',
+	'head',
+	'delete'
+];
+
+for (const method of methods) {
+	got[method] = (url, opts) => got(url, Object.assign({}, opts, {method}));
+	got.stream[method] = (url, opts) => got.stream(url, Object.assign({}, opts, {method}));
+}
+
+class StdError extends Error {
+	constructor(message, error, opts) {
+		super(message);
+		this.name = 'StdError';
+
+		if (error.code !== undefined) {
+			this.code = error.code;
+		}
+
+		Object.assign(this, {
+			host: opts.host,
+			hostname: opts.hostname,
+			method: opts.method,
+			path: opts.path,
+			protocol: opts.protocol,
+			url: opts.href
+		});
+	}
+}
+
+got.RequestError = class extends StdError {
+	constructor(error, opts) {
+		super(error.message, error, opts);
+		this.name = 'RequestError';
+	}
+};
+
+got.ReadError = class extends StdError {
+	constructor(error, opts) {
+		super(error.message, error, opts);
+		this.name = 'ReadError';
+	}
+};
+
+got.ParseError = class extends StdError {
+	constructor(error, statusCode, opts, data) {
+		super(`${error.message} in "${urlLib.format(opts)}": \n${data.slice(0, 77)}...`, error, opts);
+		this.name = 'ParseError';
+		this.statusCode = statusCode;
+		this.statusMessage = http.STATUS_CODES[this.statusCode];
+	}
+};
+
+got.HTTPError = class extends StdError {
+	constructor(statusCode, headers, opts) {
+		const statusMessage = http.STATUS_CODES[statusCode];
+		super(`Response code ${statusCode} (${statusMessage})`, {}, opts);
+		this.name = 'HTTPError';
+		this.statusCode = statusCode;
+		this.statusMessage = statusMessage;
+		this.headers = headers;
+	}
+};
+
+got.MaxRedirectsError = class extends StdError {
+	constructor(statusCode, redirectUrls, opts) {
+		super('Redirected 10 times. Aborting.', {}, opts);
+		this.name = 'MaxRedirectsError';
+		this.statusCode = statusCode;
+		this.statusMessage = http.STATUS_CODES[this.statusCode];
+		this.redirectUrls = redirectUrls;
+	}
+};
+
+got.UnsupportedProtocolError = class extends StdError {
+	constructor(opts) {
+		super(`Unsupported protocol "${opts.protocol}"`, {}, opts);
+		this.name = 'UnsupportedProtocolError';
+	}
+};
+
+module.exports = got;
+
+
+/***/ }),
+/* 55 */
+/***/ (function(module, exports) {
+
+module.exports = require("events");
+
+/***/ }),
+/* 56 */
+/***/ (function(module, exports) {
+
+module.exports = require("http");
+
+/***/ }),
+/* 57 */
+/***/ (function(module, exports) {
+
+module.exports = require("https");
+
+/***/ }),
+/* 58 */
+/***/ (function(module, exports) {
+
+module.exports = require("url");
+
+/***/ }),
+/* 59 */
+/***/ (function(module, exports) {
+
+module.exports = require("querystring");
+
+/***/ }),
+/* 60 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var stream = __webpack_require__(39);
+
+function DuplexWrapper(options, writable, readable) {
+  if (typeof readable === "undefined") {
+    readable = writable;
+    writable = options;
+    options = null;
+  }
+
+  stream.Duplex.call(this, options);
+
+  if (typeof readable.read !== "function") {
+    readable = (new stream.Readable(options)).wrap(readable);
+  }
+
+  this._writable = writable;
+  this._readable = readable;
+  this._waiting = false;
+
+  var self = this;
+
+  writable.once("finish", function() {
+    self.end();
+  });
+
+  this.once("finish", function() {
+    writable.end();
+  });
+
+  readable.on("readable", function() {
+    if (self._waiting) {
+      self._waiting = false;
+      self._read();
+    }
+  });
+
+  readable.once("end", function() {
+    self.push(null);
+  });
+
+  if (!options || typeof options.bubbleErrors === "undefined" || options.bubbleErrors) {
+    writable.on("error", function(err) {
+      self.emit("error", err);
+    });
+
+    readable.on("error", function(err) {
+      self.emit("error", err);
+    });
+  }
+}
+
+DuplexWrapper.prototype = Object.create(stream.Duplex.prototype, {constructor: {value: DuplexWrapper}});
+
+DuplexWrapper.prototype._write = function _write(input, encoding, done) {
+  this._writable.write(input, encoding, done);
+};
+
+DuplexWrapper.prototype._read = function _read() {
+  var buf;
+  var reads = 0;
+  while ((buf = this._readable.read()) !== null) {
+    this.push(buf);
+    reads++;
+  }
+  if (reads === 0) {
+    this._waiting = true;
+  }
+};
+
+module.exports = function duplex2(options, writable, readable) {
+  return new DuplexWrapper(options, writable, readable);
+};
+
+module.exports.DuplexWrapper = DuplexWrapper;
+
+
+/***/ }),
+/* 61 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var isStream = module.exports = function (stream) {
+	return stream !== null && typeof stream === 'object' && typeof stream.pipe === 'function';
+};
+
+isStream.writable = function (stream) {
+	return isStream(stream) && stream.writable !== false && typeof stream._write === 'function' && typeof stream._writableState === 'object';
+};
+
+isStream.readable = function (stream) {
+	return isStream(stream) && stream.readable !== false && typeof stream._read === 'function' && typeof stream._readableState === 'object';
+};
+
+isStream.duplex = function (stream) {
+	return isStream.writable(stream) && isStream.readable(stream);
+};
+
+isStream.transform = function (stream) {
+	return isStream.duplex(stream) && typeof stream._transform === 'function' && typeof stream._transformState === 'object';
+};
+
+
+/***/ }),
+/* 62 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+const bufferStream = __webpack_require__(63);
+
+function getStream(inputStream, opts) {
+	if (!inputStream) {
+		return Promise.reject(new Error('Expected a stream'));
+	}
+
+	opts = Object.assign({maxBuffer: Infinity}, opts);
+
+	const maxBuffer = opts.maxBuffer;
+	let stream;
+	let clean;
+
+	const p = new Promise((resolve, reject) => {
+		const error = err => {
+			if (err) { // null check
+				err.bufferedData = stream.getBufferedValue();
+			}
+
+			reject(err);
+		};
+
+		stream = bufferStream(opts);
+		inputStream.once('error', error);
+		inputStream.pipe(stream);
+
+		stream.on('data', () => {
+			if (stream.getBufferedLength() > maxBuffer) {
+				reject(new Error('maxBuffer exceeded'));
+			}
+		});
+		stream.once('error', error);
+		stream.on('end', resolve);
+
+		clean = () => {
+			// some streams doesn't implement the `stream.Readable` interface correctly
+			if (inputStream.unpipe) {
+				inputStream.unpipe(stream);
+			}
+		};
+	});
+
+	p.then(clean, clean);
+
+	return p.then(() => stream.getBufferedValue());
+}
+
+module.exports = getStream;
+module.exports.buffer = (stream, opts) => getStream(stream, Object.assign({}, opts, {encoding: 'buffer'}));
+module.exports.array = (stream, opts) => getStream(stream, Object.assign({}, opts, {array: true}));
+
+
+/***/ }),
+/* 63 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+const PassThrough = __webpack_require__(39).PassThrough;
+
+module.exports = opts => {
+	opts = Object.assign({}, opts);
+
+	const array = opts.array;
+	let encoding = opts.encoding;
+	const buffer = encoding === 'buffer';
+	let objectMode = false;
+
+	if (array) {
+		objectMode = !(encoding || buffer);
+	} else {
+		encoding = encoding || 'utf8';
+	}
+
+	if (buffer) {
+		encoding = null;
+	}
+
+	let len = 0;
+	const ret = [];
+	const stream = new PassThrough({objectMode});
+
+	if (encoding) {
+		stream.setEncoding(encoding);
+	}
+
+	stream.on('data', chunk => {
+		ret.push(chunk);
+
+		if (objectMode) {
+			len = ret.length;
+		} else {
+			len += chunk.length;
+		}
+	});
+
+	stream.getBufferedValue = () => {
+		if (array) {
+			return ret;
+		}
+
+		return buffer ? Buffer.concat(ret, len) : ret.join('');
+	};
+
+	stream.getBufferedLength = () => len;
+
+	return stream;
+};
+
+
+/***/ }),
+/* 64 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = function (req, time) {
+	if (req.timeoutTimer) {
+		return req;
+	}
+
+	var delays = isNaN(time) ? time : {socket: time, connect: time};
+	var host = req._headers ? (' to ' + req._headers.host) : '';
+
+	if (delays.connect !== undefined) {
+		req.timeoutTimer = setTimeout(function timeoutHandler() {
+			req.abort();
+			var e = new Error('Connection timed out on request' + host);
+			e.code = 'ETIMEDOUT';
+			req.emit('error', e);
+		}, delays.connect);
+	}
+
+	// Clear the connection timeout timer once a socket is assigned to the
+	// request and is connected.
+	req.on('socket', function assign(socket) {
+		// Socket may come from Agent pool and may be already connected.
+		if (!(socket.connecting || socket._connecting)) {
+			connect();
+			return;
+		}
+
+		socket.once('connect', connect);
+	});
+
+	function clear() {
+		if (req.timeoutTimer) {
+			clearTimeout(req.timeoutTimer);
+			req.timeoutTimer = null;
+		}
+	}
+
+	function connect() {
+		clear();
+
+		if (delays.socket !== undefined) {
+			// Abort the request if there is no activity on the socket for more
+			// than `delays.socket` milliseconds.
+			req.setTimeout(delays.socket, function socketTimeoutHandler() {
+				req.abort();
+				var e = new Error('Socket timed out on request' + host);
+				e.code = 'ESOCKETTIMEDOUT';
+				req.emit('error', e);
+			});
+		}
+	}
+
+	return req.on('error', clear);
+};
+
+
+/***/ }),
+/* 65 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var url = __webpack_require__(58);
+var prependHttp = __webpack_require__(66);
+
+module.exports = function (x) {
+	var withProtocol = prependHttp(x);
+	var parsed = url.parse(withProtocol);
+
+	if (withProtocol !== x) {
+		parsed.protocol = null;
+	}
+
+	return parsed;
+};
+
+
+/***/ }),
+/* 66 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+module.exports = function (url) {
+	if (typeof url !== 'string') {
+		throw new TypeError('Expected a string, got ' + typeof url);
+	}
+
+	url = url.trim();
+
+	if (/^\.*\/|^(?!localhost)\w+:/.test(url)) {
+		return url;
+	}
+
+	return url.replace(/^(?!(?:\w+:)?\/\/)/, 'http://');
+};
+
+
+/***/ }),
+/* 67 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+// Copied from https://github.com/nodejs/node/blob/master/lib/internal/url.js
+
+function urlToOptions(url) {
+  var options = {
+    protocol: url.protocol,
+    hostname: url.hostname,
+    hash: url.hash,
+    search: url.search,
+    pathname: url.pathname,
+    path: `${url.pathname}${url.search}`,
+    href: url.href
+  };
+  if (url.port !== '') {
+    options.port = Number(url.port);
+  }
+  if (url.username || url.password) {
+    options.auth = `${url.username}:${url.password}`;
+  }
+  return options;
+}
+
+
+
+module.exports = urlToOptions;
+
+
+/***/ }),
+/* 68 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+module.exports = function (obj) {
+	var ret = {};
+	var keys = Object.keys(Object(obj));
+
+	for (var i = 0; i < keys.length; i++) {
+		ret[keys[i].toLowerCase()] = obj[keys[i]];
+	}
+
+	return ret;
+};
+
+
+/***/ }),
+/* 69 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+const PassThrough = __webpack_require__(39).PassThrough;
+const zlib = __webpack_require__(70);
+const mimicResponse = __webpack_require__(71);
+
+module.exports = response => {
+	// TODO: Use Array#includes when targeting Node.js 6
+	if (['gzip', 'deflate'].indexOf(response.headers['content-encoding']) === -1) {
+		return response;
+	}
+
+	const unzip = zlib.createUnzip();
+	const stream = new PassThrough();
+
+	mimicResponse(response, stream);
+
+	unzip.on('error', err => {
+		if (err.code === 'Z_BUF_ERROR') {
+			stream.end();
+			return;
+		}
+
+		stream.emit('error', err);
+	});
+
+	response.pipe(unzip).pipe(stream);
+
+	return stream;
+};
+
+
+/***/ }),
+/* 70 */
+/***/ (function(module, exports) {
+
+module.exports = require("zlib");
+
+/***/ }),
+/* 71 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+// We define these manually to ensure they're always copied
+// even if they would move up the prototype chain
+// https://nodejs.org/api/http.html#http_class_http_incomingmessage
+const knownProps = [
+	'destroy',
+	'setTimeout',
+	'socket',
+	'headers',
+	'trailers',
+	'rawHeaders',
+	'statusCode',
+	'httpVersion',
+	'httpVersionMinor',
+	'httpVersionMajor',
+	'rawTrailers',
+	'statusMessage'
+];
+
+module.exports = (fromStream, toStream) => {
+	const fromProps = new Set(Object.keys(fromStream).concat(knownProps));
+
+	for (const prop of fromProps) {
+		// Don't overwrite existing properties
+		if (prop in toStream) {
+			continue;
+		}
+
+		toStream[prop] = typeof fromStream[prop] === 'function' ? fromStream[prop].bind(fromStream) : fromStream[prop];
+	}
+};
+
+
+/***/ }),
+/* 72 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var WHITELIST = [
+	'ETIMEDOUT',
+	'ECONNRESET',
+	'EADDRINUSE',
+	'ESOCKETTIMEDOUT',
+	'ECONNREFUSED',
+	'EPIPE'
+];
+
+var BLACKLIST = [
+	'ENOTFOUND',
+	'ENETUNREACH',
+
+	// SSL errors from https://github.com/nodejs/node/blob/ed3d8b13ee9a705d89f9e0397d9e96519e7e47ac/src/node_crypto.cc#L1950
+	'UNABLE_TO_GET_ISSUER_CERT',
+	'UNABLE_TO_GET_CRL',
+	'UNABLE_TO_DECRYPT_CERT_SIGNATURE',
+	'UNABLE_TO_DECRYPT_CRL_SIGNATURE',
+	'UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY',
+	'CERT_SIGNATURE_FAILURE',
+	'CRL_SIGNATURE_FAILURE',
+	'CERT_NOT_YET_VALID',
+	'CERT_HAS_EXPIRED',
+	'CRL_NOT_YET_VALID',
+	'CRL_HAS_EXPIRED',
+	'ERROR_IN_CERT_NOT_BEFORE_FIELD',
+	'ERROR_IN_CERT_NOT_AFTER_FIELD',
+	'ERROR_IN_CRL_LAST_UPDATE_FIELD',
+	'ERROR_IN_CRL_NEXT_UPDATE_FIELD',
+	'OUT_OF_MEM',
+	'DEPTH_ZERO_SELF_SIGNED_CERT',
+	'SELF_SIGNED_CERT_IN_CHAIN',
+	'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+	'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+	'CERT_CHAIN_TOO_LONG',
+	'CERT_REVOKED',
+	'INVALID_CA',
+	'PATH_LENGTH_EXCEEDED',
+	'INVALID_PURPOSE',
+	'CERT_UNTRUSTED',
+	'CERT_REJECTED'
+];
+
+module.exports = function (err) {
+	if (!err || !err.code) {
+		return true;
+	}
+
+	if (WHITELIST.indexOf(err.code) !== -1) {
+		return true;
+	}
+
+	if (BLACKLIST.indexOf(err.code) !== -1) {
+		return false;
+	}
+
+	return true;
+};
+
+
+/***/ }),
+/* 73 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+const hasToStringTag = __webpack_require__(74);
+const isObject = __webpack_require__(76);
+
+const toString = Object.prototype.toString;
+const urlClass = "[object URL]";
+
+const hash = "hash";
+const host = "host";
+const hostname = "hostname";
+const href = "href";
+const password = "password";
+const pathname = "pathname";
+const port = "port";
+const protocol = "protocol";
+const search = "search";
+const username = "username";
+
+
+
+const isURL = (url, supportIncomplete/*=false*/) =>
+{
+	if (!isObject(url)) return false;
+
+	// Native implementation in older browsers
+	if (!hasToStringTag && toString.call(url) === urlClass) return true;
+
+	if (!(href     in url)) return false;
+	if (!(protocol in url)) return false;
+	if (!(username in url)) return false;
+	if (!(password in url)) return false;
+	if (!(hostname in url)) return false;
+	if (!(port     in url)) return false;
+	if (!(host     in url)) return false;
+	if (!(pathname in url)) return false;
+	if (!(search   in url)) return false;
+	if (!(hash     in url)) return false;
+
+	if (supportIncomplete !== true)
+	{
+		if (!isObject(url.searchParams)) return false;
+
+		// TODO :: write a separate isURLSearchParams ?
+	}
+
+	return true;
+}
+
+
+
+isURL.lenient = url =>
+{
+	return isURL(url, true);
+};
+
+
+
+module.exports = isURL;
+
+
+/***/ }),
+/* 74 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/**
+ * @file Tests if ES6 @@toStringTag is supported.
+ * @see {@link http://www.ecma-international.org/ecma-262/6.0/#sec-@@tostringtag|26.3.1 @@toStringTag}
+ * @version 1.4.1
+ * @author Xotic750 <Xotic750@gmail.com>
+ * @copyright  Xotic750
+ * @license {@link <https://opensource.org/licenses/MIT> MIT}
+ * @module has-to-string-tag-x
+ */
+
+
+
+/**
+ * Indicates if `Symbol.toStringTag`exists and is the correct type.
+ * `true`, if it exists and is the correct type, otherwise `false`.
+ *
+ * @type boolean
+ */
+module.exports = __webpack_require__(75) && typeof Symbol.toStringTag === 'symbol';
+
+
+/***/ }),
+/* 75 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/**
+ * @file Tests if ES6 Symbol is supported.
+ * @version 1.4.2
+ * @author Xotic750 <Xotic750@gmail.com>
+ * @copyright  Xotic750
+ * @license {@link <https://opensource.org/licenses/MIT> MIT}
+ * @module has-symbol-support-x
+ */
+
+
+
+/**
+ * Indicates if `Symbol`exists and creates the correct type.
+ * `true`, if it exists and creates the correct type, otherwise `false`.
+ *
+ * @type boolean
+ */
+module.exports = typeof Symbol === 'function' && typeof Symbol('') === 'symbol';
+
+
+/***/ }),
+/* 76 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = function isObject(x) {
+	return typeof x === "object" && x !== null;
+};
+
+
+/***/ }),
+/* 77 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var toString = Object.prototype.toString;
+
+module.exports = function (x) {
+	var prototype;
+	return toString.call(x) === '[object Object]' && (prototype = Object.getPrototypeOf(x), prototype === null || prototype === Object.getPrototypeOf({}));
+};
+
+
+/***/ }),
+/* 78 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+class CancelError extends Error {
+	constructor() {
+		super('Promise was canceled');
+		this.name = 'CancelError';
+	}
+}
+
+class PCancelable {
+	static fn(fn) {
+		return function () {
+			const args = [].slice.apply(arguments);
+			return new PCancelable((onCancel, resolve, reject) => {
+				args.unshift(onCancel);
+				fn.apply(null, args).then(resolve, reject);
+			});
+		};
+	}
+
+	constructor(executor) {
+		this._pending = true;
+		this._canceled = false;
+
+		this._promise = new Promise((resolve, reject) => {
+			this._reject = reject;
+
+			return executor(
+				fn => {
+					this._cancel = fn;
+				},
+				val => {
+					this._pending = false;
+					resolve(val);
+				},
+				err => {
+					this._pending = false;
+					reject(err);
+				}
+			);
+		});
+	}
+
+	then() {
+		return this._promise.then.apply(this._promise, arguments);
+	}
+
+	catch() {
+		return this._promise.catch.apply(this._promise, arguments);
+	}
+
+	cancel() {
+		if (!this._pending || this._canceled) {
+			return;
+		}
+
+		if (typeof this._cancel === 'function') {
+			try {
+				this._cancel();
+			} catch (err) {
+				this._reject(err);
+			}
+		}
+
+		this._canceled = true;
+		this._reject(new CancelError());
+	}
+
+	get canceled() {
+		return this._canceled;
+	}
+}
+
+Object.setPrototypeOf(PCancelable.prototype, Promise.prototype);
+
+module.exports = PCancelable;
+module.exports.CancelError = CancelError;
+
+
+/***/ }),
+/* 79 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+const pFinally = __webpack_require__(80);
+
+class TimeoutError extends Error {
+	constructor(message) {
+		super(message);
+		this.name = 'TimeoutError';
+	}
+}
+
+module.exports = (promise, ms, fallback) => new Promise((resolve, reject) => {
+	if (typeof ms !== 'number' || ms < 0) {
+		throw new TypeError('Expected `ms` to be a positive number');
+	}
+
+	const timer = setTimeout(() => {
+		if (typeof fallback === 'function') {
+			resolve(fallback());
+			return;
+		}
+
+		const message = typeof fallback === 'string' ? fallback : `Promise timed out after ${ms} milliseconds`;
+		const err = fallback instanceof Error ? fallback : new TimeoutError(message);
+
+		reject(err);
+	}, ms);
+
+	pFinally(
+		promise.then(resolve, reject),
+		() => {
+			clearTimeout(timer);
+		}
+	);
+});
+
+module.exports.TimeoutError = TimeoutError;
+
+
+/***/ }),
+/* 80 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+module.exports = (promise, onFinally) => {
+	onFinally = onFinally || (() => {});
+
+	return promise.then(
+		val => new Promise(resolve => {
+			resolve(onFinally());
+		}).then(() => val),
+		err => new Promise(resolve => {
+			resolve(onFinally());
+		}).then(() => {
+			throw err;
+		})
+	);
+};
+
+
+/***/ }),
+/* 81 */
+/***/ (function(module) {
+
+module.exports = {"_from":"got@^7.1.0","_id":"got@7.1.0","_inBundle":false,"_integrity":"sha512-Y5WMo7xKKq1muPsxD+KmrR8DH5auG7fBdDVueZwETwV6VytKyU9OX/ddpq2/1hp1vIPvVb4T81dKQz3BivkNLw==","_location":"/got","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"got@^7.1.0","name":"got","escapedName":"got","rawSpec":"^7.1.0","saveSpec":null,"fetchSpec":"^7.1.0"},"_requiredBy":["/electron-pdf-window"],"_resolved":"https://registry.npmjs.org/got/-/got-7.1.0.tgz","_shasum":"05450fd84094e6bbea56f451a43a9c289166385a","_spec":"got@^7.1.0","_where":"/Users/broth/projects/nativefier/node_modules/electron-pdf-window","ava":{"concurrency":4},"browser":{"decompress-response":false},"bugs":{"url":"https://github.com/sindresorhus/got/issues"},"bundleDependencies":false,"dependencies":{"decompress-response":"^3.2.0","duplexer3":"^0.1.4","get-stream":"^3.0.0","is-plain-obj":"^1.1.0","is-retry-allowed":"^1.0.0","is-stream":"^1.0.0","isurl":"^1.0.0-alpha5","lowercase-keys":"^1.0.0","p-cancelable":"^0.3.0","p-timeout":"^1.1.1","safe-buffer":"^5.0.1","timed-out":"^4.0.0","url-parse-lax":"^1.0.0","url-to-options":"^1.0.1"},"deprecated":false,"description":"Simplified HTTP requests","devDependencies":{"ava":"^0.20.0","coveralls":"^2.11.4","form-data":"^2.1.1","get-port":"^3.0.0","into-stream":"^3.0.0","nyc":"^11.0.2","pem":"^1.4.4","pify":"^3.0.0","tempfile":"^2.0.0","tempy":"^0.1.0","universal-url":"^1.0.0-alpha","xo":"^0.18.0"},"engines":{"node":">=4"},"files":["index.js"],"homepage":"https://github.com/sindresorhus/got#readme","keywords":["http","https","get","got","url","uri","request","util","utility","simple","curl","wget","fetch","net","network","electron"],"license":"MIT","maintainers":[{"name":"Sindre Sorhus","email":"sindresorhus@gmail.com","url":"sindresorhus.com"},{"name":"Vsevolod Strukchinsky","email":"floatdrop@gmail.com","url":"github.com/floatdrop"},{"name":"Alexander Tesfamichael","email":"alex.tesfamichael@gmail.com","url":"alextes.me"}],"name":"got","repository":{"type":"git","url":"git+https://github.com/sindresorhus/got.git"},"scripts":{"coveralls":"nyc report --reporter=text-lcov | coveralls","test":"xo && nyc ava"},"version":"7.1.0"};
+
+/***/ }),
+/* 82 */
+/***/ (function(module, exports, __webpack_require__) {
+
 "use strict";
 
 
@@ -6218,7 +8541,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _helpers = __webpack_require__(47);
+var _helpers = __webpack_require__(83);
 
 var _helpers2 = _interopRequireDefault(_helpers);
 
@@ -6248,7 +8571,7 @@ function onNewWindowHelper(urlToGo, disposition, targetUrl, internalUrls, preven
 exports.default = { onNewWindowHelper };
 
 /***/ }),
-/* 47 */
+/* 83 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -6258,11 +8581,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _wurl = __webpack_require__(48);
+var _wurl = __webpack_require__(84);
 
 var _wurl2 = _interopRequireDefault(_wurl);
 
-var _os = __webpack_require__(49);
+var _os = __webpack_require__(85);
 
 var _os2 = _interopRequireDefault(_os);
 
@@ -6277,7 +8600,7 @@ var _path2 = _interopRequireDefault(_path);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var INJECT_CSS_PATH = _path2.default.join(__dirname, '..', 'inject/inject.css');
-var log = __webpack_require__(50);
+var log = __webpack_require__(86);
 
 function isOSX() {
   return _os2.default.platform() === 'darwin';
@@ -6360,7 +8683,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 48 */
+/* 84 */
 /***/ (function(module, exports) {
 
 module.exports = function (arg, url) {
@@ -6545,13 +8868,13 @@ module.exports = function (arg, url) {
 };
 
 /***/ }),
-/* 49 */
+/* 85 */
 /***/ (function(module, exports) {
 
 module.exports = require("os");
 
 /***/ }),
-/* 50 */
+/* 86 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
@@ -6807,7 +9130,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
 
 
 /***/ }),
-/* 51 */
+/* 87 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7063,7 +9386,7 @@ function createMenu(_ref) {
 exports.default = createMenu;
 
 /***/ }),
-/* 52 */
+/* 88 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7075,7 +9398,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _electron = __webpack_require__(17);
 
-var _electronContextMenu = __webpack_require__(53);
+var _electronContextMenu = __webpack_require__(89);
 
 var _electronContextMenu2 = _interopRequireDefault(_electronContextMenu);
 
@@ -7115,14 +9438,14 @@ function initContextMenu(createNewWindow, createNewTab) {
 exports.default = initContextMenu;
 
 /***/ }),
-/* 53 */
+/* 89 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 const electron = __webpack_require__(17);
 const {download} = __webpack_require__(18);
-const isDev = __webpack_require__(54);
+const isDev = __webpack_require__(90);
 
 const webContents = win => win.webContents || win.getWebContents();
 
@@ -7292,7 +9615,7 @@ module.exports = (opts = {}) => {
 
 
 /***/ }),
-/* 54 */
+/* 90 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7301,7 +9624,7 @@ module.exports = process.defaultApp || /[\\/]electron-prebuilt[\\/]/.test(proces
 
 
 /***/ }),
-/* 55 */
+/* 91 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7311,7 +9634,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _helpers = __webpack_require__(47);
+var _helpers = __webpack_require__(83);
 
 var _helpers2 = _interopRequireDefault(_helpers);
 
@@ -7402,7 +9725,7 @@ function createTrayIcon(inpOptions, mainWindow) {
 exports.default = createTrayIcon;
 
 /***/ }),
-/* 56 */
+/* 92 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7420,7 +9743,7 @@ var _path = __webpack_require__(14);
 
 var _path2 = _interopRequireDefault(_path);
 
-var _helpers = __webpack_require__(47);
+var _helpers = __webpack_require__(83);
 
 var _helpers2 = _interopRequireDefault(_helpers);
 
@@ -7430,7 +9753,7 @@ var isOSX = _helpers2.default.isOSX,
     isWindows = _helpers2.default.isWindows,
     isLinux = _helpers2.default.isLinux;
 
-var log = __webpack_require__(50);
+var log = __webpack_require__(86);
 /**
  * Synchronously find a file or directory
  * @param {RegExp} pattern regex
