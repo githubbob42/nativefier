@@ -217,7 +217,13 @@ function createMenu({
               defaultId: 1,
               title: 'About...',
               // message: 'Copyright © 2005 - 2016 LiquidFrameworks, Inc. All Rights Reserved.'});
-              message: `${options.versionString.ProductName}\n${options.appCopyright}\nhttp://www.liquidframeworks.com\n\nVersion: ${options.buildVersion}\n${options.targetUrl}\n\nElectron: ${process.versions.electron} / Chrome: ${process.versions.chrome}`,
+              message: `${options.versionString.ProductName}\n${
+                options.appCopyright
+              }\nhttp://www.liquidframeworks.com\n\nVersion: ${
+                options.buildVersion
+              }\n${options.targetUrl}\n\nElectron: ${
+                process.versions.electron
+              } / Chrome: ${process.versions.chrome}`,
             });
             console.log(`Built with Nativefier v${nativefierVersion}`); // eslint-disable-line no-console
           },

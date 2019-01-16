@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import windowStateKeeper from 'electron-window-state';
+import PDFWindow from 'electron-pdf-window';
 import mainWindowHelpers from './mainWindowHelpers';
 import helpers from '../../helpers/helpers';
 import createMenu from '../menu/menu';
@@ -207,7 +208,24 @@ function createMainWindow(inpOptions, onAppQuit, setDockBadge) {
     withFocusedWindow((focusedWindow) => focusedWindow.webContents.getURL());
 
   const onWillNavigate = (event, urlToGo) => {
-    if (!linkIsInternal(options.targetUrl, urlToGo, options.internalUrls)) {
+    if (
+      urlToGo
+        .split(/#|\?/)[0]
+        .split('.')
+        .pop()
+        .trim() === 'pdf'
+    ) {
+      event.preventDefault();
+      // const PDFWindow = require('electron-pdf-window')
+      const win = new PDFWindow({
+        width: 800,
+        height: 600,
+      });
+
+      win.loadURL(urlToGo);
+    } else if (
+      !linkIsInternal(options.targetUrl, urlToGo, options.internalUrls)
+    ) {
       event.preventDefault();
       shell.openExternal(urlToGo);
     }
