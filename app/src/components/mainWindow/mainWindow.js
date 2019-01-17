@@ -92,8 +92,8 @@ function createMainWindow(inpOptions, onAppQuit, setDockBadge) {
       preload: path.join(__dirname, 'static', 'preload.js'),
       zoomFactor: options.zoom,
       // window.open return Window object(like in regular browsers), not BrowserWindowProxy
-      nativeWindowOpen: true,
-      affinity: 'main-window', // main window, and addition windows should work in one process
+      // nativeWindowOpen: true,
+      // affinity: 'main-window', // main window, and addition windows should work in one process
     },
   };
 
