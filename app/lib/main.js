@@ -115,15 +115,15 @@ var _mainWindow = __webpack_require__(31);
 
 var _mainWindow2 = _interopRequireDefault(_mainWindow);
 
-var _trayIcon = __webpack_require__(91);
+var _trayIcon = __webpack_require__(90);
 
 var _trayIcon2 = _interopRequireDefault(_trayIcon);
 
-var _helpers = __webpack_require__(83);
+var _helpers = __webpack_require__(82);
 
 var _helpers2 = _interopRequireDefault(_helpers);
 
-var _inferFlash = __webpack_require__(92);
+var _inferFlash = __webpack_require__(91);
 
 var _inferFlash2 = _interopRequireDefault(_inferFlash);
 
@@ -4519,19 +4519,19 @@ var _electronPdfWindow = __webpack_require__(46);
 
 var _electronPdfWindow2 = _interopRequireDefault(_electronPdfWindow);
 
-var _mainWindowHelpers = __webpack_require__(82);
+var _mainWindowHelpers = __webpack_require__(81);
 
 var _mainWindowHelpers2 = _interopRequireDefault(_mainWindowHelpers);
 
-var _helpers = __webpack_require__(83);
+var _helpers = __webpack_require__(82);
 
 var _helpers2 = _interopRequireDefault(_helpers);
 
-var _menu = __webpack_require__(87);
+var _menu = __webpack_require__(86);
 
 var _menu2 = _interopRequireDefault(_menu);
 
-var _contextMenu = __webpack_require__(88);
+var _contextMenu = __webpack_require__(87);
 
 var _contextMenu2 = _interopRequireDefault(_contextMenu);
 
@@ -4617,10 +4617,10 @@ function createMainWindow(inpOptions, onAppQuit, setDockBadge) {
       nodeIntegration: false,
       webSecurity: !options.insecure,
       preload: _path2.default.join(__dirname, 'static', 'preload.js'),
-      zoomFactor: options.zoom,
+      zoomFactor: options.zoom
       // window.open return Window object(like in regular browsers), not BrowserWindowProxy
-      nativeWindowOpen: true,
-      affinity: 'main-window' // main window, and addition windows should work in one process
+      // nativeWindowOpen: true,
+      // affinity: 'main-window', // main window, and addition windows should work in one process
     }
   };
 
@@ -7208,10 +7208,10 @@ const decompressResponse = __webpack_require__(69);
 const isRetryAllowed = __webpack_require__(72);
 const Buffer = __webpack_require__(50).Buffer;
 const isURL = __webpack_require__(73);
-const isPlainObj = __webpack_require__(77);
-const PCancelable = __webpack_require__(78);
-const pTimeout = __webpack_require__(79);
-const pkg = __webpack_require__(81);
+const isPlainObj = __webpack_require__(29);
+const PCancelable = __webpack_require__(77);
+const pTimeout = __webpack_require__(78);
+const pkg = __webpack_require__(80);
 
 const getMethodRedirectCodes = new Set([300, 301, 302, 303, 304, 305, 307, 308]);
 const allMethodRedirectCodes = new Set([300, 303, 307, 308]);
@@ -8367,20 +8367,6 @@ module.exports = function isObject(x) {
 
 "use strict";
 
-var toString = Object.prototype.toString;
-
-module.exports = function (x) {
-	var prototype;
-	return toString.call(x) === '[object Object]' && (prototype = Object.getPrototypeOf(x), prototype === null || prototype === Object.getPrototypeOf({}));
-};
-
-
-/***/ }),
-/* 78 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
 
 class CancelError extends Error {
 	constructor() {
@@ -8460,12 +8446,12 @@ module.exports.CancelError = CancelError;
 
 
 /***/ }),
-/* 79 */
+/* 78 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-const pFinally = __webpack_require__(80);
+const pFinally = __webpack_require__(79);
 
 class TimeoutError extends Error {
 	constructor(message) {
@@ -8503,7 +8489,7 @@ module.exports.TimeoutError = TimeoutError;
 
 
 /***/ }),
-/* 80 */
+/* 79 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8525,13 +8511,13 @@ module.exports = (promise, onFinally) => {
 
 
 /***/ }),
-/* 81 */
+/* 80 */
 /***/ (function(module) {
 
-module.exports = {"_from":"got@^7.1.0","_id":"got@7.1.0","_inBundle":false,"_integrity":"sha512-Y5WMo7xKKq1muPsxD+KmrR8DH5auG7fBdDVueZwETwV6VytKyU9OX/ddpq2/1hp1vIPvVb4T81dKQz3BivkNLw==","_location":"/got","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"got@^7.1.0","name":"got","escapedName":"got","rawSpec":"^7.1.0","saveSpec":null,"fetchSpec":"^7.1.0"},"_requiredBy":["/electron-pdf-window"],"_resolved":"https://registry.npmjs.org/got/-/got-7.1.0.tgz","_shasum":"05450fd84094e6bbea56f451a43a9c289166385a","_spec":"got@^7.1.0","_where":"/Users/broth/projects/nativefier/node_modules/electron-pdf-window","ava":{"concurrency":4},"browser":{"decompress-response":false},"bugs":{"url":"https://github.com/sindresorhus/got/issues"},"bundleDependencies":false,"dependencies":{"decompress-response":"^3.2.0","duplexer3":"^0.1.4","get-stream":"^3.0.0","is-plain-obj":"^1.1.0","is-retry-allowed":"^1.0.0","is-stream":"^1.0.0","isurl":"^1.0.0-alpha5","lowercase-keys":"^1.0.0","p-cancelable":"^0.3.0","p-timeout":"^1.1.1","safe-buffer":"^5.0.1","timed-out":"^4.0.0","url-parse-lax":"^1.0.0","url-to-options":"^1.0.1"},"deprecated":false,"description":"Simplified HTTP requests","devDependencies":{"ava":"^0.20.0","coveralls":"^2.11.4","form-data":"^2.1.1","get-port":"^3.0.0","into-stream":"^3.0.0","nyc":"^11.0.2","pem":"^1.4.4","pify":"^3.0.0","tempfile":"^2.0.0","tempy":"^0.1.0","universal-url":"^1.0.0-alpha","xo":"^0.18.0"},"engines":{"node":">=4"},"files":["index.js"],"homepage":"https://github.com/sindresorhus/got#readme","keywords":["http","https","get","got","url","uri","request","util","utility","simple","curl","wget","fetch","net","network","electron"],"license":"MIT","maintainers":[{"name":"Sindre Sorhus","email":"sindresorhus@gmail.com","url":"sindresorhus.com"},{"name":"Vsevolod Strukchinsky","email":"floatdrop@gmail.com","url":"github.com/floatdrop"},{"name":"Alexander Tesfamichael","email":"alex.tesfamichael@gmail.com","url":"alextes.me"}],"name":"got","repository":{"type":"git","url":"git+https://github.com/sindresorhus/got.git"},"scripts":{"coveralls":"nyc report --reporter=text-lcov | coveralls","test":"xo && nyc ava"},"version":"7.1.0"};
+module.exports = {"_args":[[{"raw":"got@^7.1.0","scope":null,"escapedName":"got","name":"got","rawSpec":"^7.1.0","spec":">=7.1.0 <8.0.0","type":"range"},"/Users/broth/projects/nativefier/app/node_modules/electron-pdf-window"]],"_from":"got@>=7.1.0 <8.0.0","_id":"got@7.1.0","_inCache":true,"_location":"/got","_nodeVersion":"8.0.0","_npmOperationalInternal":{"host":"s3://npm-registry-packages","tmp":"tmp/got-7.1.0.tgz_1498837826024_0.5711319362744689"},"_npmUser":{"name":"sindresorhus","email":"sindresorhus@gmail.com"},"_npmVersion":"5.0.0","_phantomChildren":{},"_requested":{"raw":"got@^7.1.0","scope":null,"escapedName":"got","name":"got","rawSpec":"^7.1.0","spec":">=7.1.0 <8.0.0","type":"range"},"_requiredBy":["/electron-pdf-window"],"_resolved":"https://registry.npmjs.org/got/-/got-7.1.0.tgz","_shasum":"05450fd84094e6bbea56f451a43a9c289166385a","_shrinkwrap":null,"_spec":"got@^7.1.0","_where":"/Users/broth/projects/nativefier/app/node_modules/electron-pdf-window","ava":{"concurrency":4},"browser":{"decompress-response":false},"bugs":{"url":"https://github.com/sindresorhus/got/issues"},"dependencies":{"decompress-response":"^3.2.0","duplexer3":"^0.1.4","get-stream":"^3.0.0","is-plain-obj":"^1.1.0","is-retry-allowed":"^1.0.0","is-stream":"^1.0.0","isurl":"^1.0.0-alpha5","lowercase-keys":"^1.0.0","p-cancelable":"^0.3.0","p-timeout":"^1.1.1","safe-buffer":"^5.0.1","timed-out":"^4.0.0","url-parse-lax":"^1.0.0","url-to-options":"^1.0.1"},"description":"Simplified HTTP requests","devDependencies":{"ava":"^0.20.0","coveralls":"^2.11.4","form-data":"^2.1.1","get-port":"^3.0.0","into-stream":"^3.0.0","nyc":"^11.0.2","pem":"^1.4.4","pify":"^3.0.0","tempfile":"^2.0.0","tempy":"^0.1.0","universal-url":"^1.0.0-alpha","xo":"^0.18.0"},"directories":{},"dist":{"integrity":"sha512-Y5WMo7xKKq1muPsxD+KmrR8DH5auG7fBdDVueZwETwV6VytKyU9OX/ddpq2/1hp1vIPvVb4T81dKQz3BivkNLw==","shasum":"05450fd84094e6bbea56f451a43a9c289166385a","tarball":"https://registry.npmjs.org/got/-/got-7.1.0.tgz"},"engines":{"node":">=4"},"files":["index.js"],"gitHead":"b725ef576864fc6dd331b4df58ddb12f2f7d6b3a","homepage":"https://github.com/sindresorhus/got#readme","keywords":["http","https","get","got","url","uri","request","util","utility","simple","curl","wget","fetch","net","network","electron"],"license":"MIT","maintainers":[{"name":"alextes","email":"alex.tesfamichael@gmail.com"},{"name":"kevva","email":"kevinmartensson@gmail.com"},{"name":"sindresorhus","email":"sindresorhus@gmail.com"},{"name":"floatdrop","email":"floatdrop@gmail.com"}],"name":"got","optionalDependencies":{},"readme":"ERROR: No README data found!","repository":{"type":"git","url":"git+https://github.com/sindresorhus/got.git"},"scripts":{"coveralls":"nyc report --reporter=text-lcov | coveralls","test":"xo && nyc ava"},"version":"7.1.0"};
 
 /***/ }),
-/* 82 */
+/* 81 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8541,7 +8527,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _helpers = __webpack_require__(83);
+var _helpers = __webpack_require__(82);
 
 var _helpers2 = _interopRequireDefault(_helpers);
 
@@ -8571,7 +8557,7 @@ function onNewWindowHelper(urlToGo, disposition, targetUrl, internalUrls, preven
 exports.default = { onNewWindowHelper };
 
 /***/ }),
-/* 83 */
+/* 82 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -8581,11 +8567,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _wurl = __webpack_require__(84);
+var _wurl = __webpack_require__(83);
 
 var _wurl2 = _interopRequireDefault(_wurl);
 
-var _os = __webpack_require__(85);
+var _os = __webpack_require__(84);
 
 var _os2 = _interopRequireDefault(_os);
 
@@ -8600,7 +8586,7 @@ var _path2 = _interopRequireDefault(_path);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var INJECT_CSS_PATH = _path2.default.join(__dirname, '..', 'inject/inject.css');
-var log = __webpack_require__(86);
+var log = __webpack_require__(85);
 
 function isOSX() {
   return _os2.default.platform() === 'darwin';
@@ -8683,7 +8669,7 @@ exports.default = {
 };
 
 /***/ }),
-/* 84 */
+/* 83 */
 /***/ (function(module, exports) {
 
 module.exports = function (arg, url) {
@@ -8868,13 +8854,13 @@ module.exports = function (arg, url) {
 };
 
 /***/ }),
-/* 85 */
+/* 84 */
 /***/ (function(module, exports) {
 
 module.exports = require("os");
 
 /***/ }),
-/* 86 */
+/* 85 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
@@ -9130,7 +9116,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*
 
 
 /***/ }),
-/* 87 */
+/* 86 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9386,7 +9372,7 @@ function createMenu(_ref) {
 exports.default = createMenu;
 
 /***/ }),
-/* 88 */
+/* 87 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9398,7 +9384,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _electron = __webpack_require__(17);
 
-var _electronContextMenu = __webpack_require__(89);
+var _electronContextMenu = __webpack_require__(88);
 
 var _electronContextMenu2 = _interopRequireDefault(_electronContextMenu);
 
@@ -9438,24 +9424,24 @@ function initContextMenu(createNewWindow, createNewTab) {
 exports.default = initContextMenu;
 
 /***/ }),
-/* 89 */
+/* 88 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 const electron = __webpack_require__(17);
 const {download} = __webpack_require__(18);
-const isDev = __webpack_require__(90);
+const isDev = __webpack_require__(89);
 
 const webContents = win => win.webContents || win.getWebContents();
 
-function create(win, opts) {
-	webContents(win).on('context-menu', (e, props) => {
-		if (typeof opts.shouldShowMenu === 'function' && opts.shouldShowMenu(e, props) === false) {
+function create(win, options) {
+	webContents(win).on('context-menu', (event, props) => {
+		if (typeof options.shouldShowMenu === 'function' && options.shouldShowMenu(event, props) === false) {
 			return;
 		}
 
-		const editFlags = props.editFlags;
+		const {editFlags} = props;
 		const hasText = props.selectionText.trim().length > 0;
 		const can = type => editFlags[`can${type}`] && hasText;
 
@@ -9491,12 +9477,24 @@ function create(win, opts) {
 			}, {
 				id: 'save',
 				label: 'Save Image',
-				click() {
+				click(item, win) {
 					download(win, props.srcURL);
 				}
-			}, {
-				type: 'separator'
 			}];
+
+			if (options.showSaveImageAs) {
+				menuTpl.push({
+					id: 'saveImageAs',
+					label: 'Save Image As…',
+					click(item, win) {
+						download(win, props.srcURL, {saveAs: true});
+					}
+				});
+			}
+
+			menuTpl.push({
+				type: 'separator'
+			});
 		}
 
 		if (props.linkURL && props.mediaType === 'none') {
@@ -9506,34 +9504,50 @@ function create(win, opts) {
 				id: 'copyLink',
 				label: 'Copy Link',
 				click() {
-					if (process.platform === 'darwin') {
-						electron.clipboard.writeBookmark(props.linkText, props.linkURL);
-					} else {
-						electron.clipboard.writeText(props.linkURL);
-					}
+					electron.clipboard.write({
+						bookmark: props.linkText,
+						text: props.linkURL
+					});
 				}
 			}, {
 				type: 'separator'
 			}];
 		}
 
-		if (opts.prepend) {
-			const result = opts.prepend(props, win);
+		if (options.showCopyImageAddress && props.mediaType === 'image') {
+			menuTpl.push({
+				type: 'separator'
+			}, {
+				id: 'copyImageAddress',
+				label: 'Copy Image Address',
+				click() {
+					electron.clipboard.write({
+						bookmark: props.srcURL,
+						text: props.srcURL
+					});
+				}
+			}, {
+				type: 'separator'
+			});
+		}
+
+		if (options.prepend) {
+			const result = options.prepend(props, win);
 
 			if (Array.isArray(result)) {
 				menuTpl.unshift(...result);
 			}
 		}
 
-		if (opts.append) {
-			const result = opts.append(props, win);
+		if (options.append) {
+			const result = options.append(props, win);
 
 			if (Array.isArray(result)) {
 				menuTpl.push(...result);
 			}
 		}
 
-		if (opts.showInspectElement || (opts.showInspectElement !== false && isDev)) {
+		if (options.showInspectElement || (options.showInspectElement !== false && isDev)) {
 			menuTpl.push({
 				type: 'separator'
 			}, {
@@ -9552,10 +9566,10 @@ function create(win, opts) {
 		}
 
 		// Apply custom labels for default menu items
-		if (opts.labels) {
+		if (options.labels) {
 			for (const menuItem of menuTpl) {
-				if (opts.labels[menuItem.id]) {
-					menuItem.label = opts.labels[menuItem.id];
+				if (options.labels[menuItem.id]) {
+					menuItem.label = options.labels[menuItem.id];
 				}
 			}
 		}
@@ -9581,50 +9595,57 @@ function create(win, opts) {
 
 function delUnusedElements(menuTpl) {
 	let notDeletedPrevEl;
-	return menuTpl.filter(el => el.visible !== false).filter((el, i, arr) => {
-		const toDelete = el.type === 'separator' && (!notDeletedPrevEl || i === arr.length - 1 || arr[i + 1].type === 'separator');
+	return menuTpl.filter(el => el.visible !== false).filter((el, i, array) => {
+		const toDelete = el.type === 'separator' && (!notDeletedPrevEl || i === array.length - 1 || array[i + 1].type === 'separator');
 		notDeletedPrevEl = toDelete ? notDeletedPrevEl : el;
 		return !toDelete;
 	});
 }
 
-module.exports = (opts = {}) => {
-	if (opts.window) {
-		const win = opts.window;
+module.exports = (options = {}) => {
+	if (options.window) {
+		const win = options.window;
 		const wc = webContents(win);
 
 		// When window is a webview that has not yet finished loading webContents is not available
 		if (wc === undefined) {
 			win.addEventListener('dom-ready', () => {
-				create(win, opts);
+				create(win, options);
 			}, {once: true});
 			return;
 		}
 
-		return create(win, opts);
+		return create(win, options);
 	}
 
-	(electron.BrowserWindow || electron.remote.BrowserWindow).getAllWindows().forEach(win => {
-		create(win, opts);
-	});
+	for (const win of (electron.BrowserWindow || electron.remote.BrowserWindow).getAllWindows()) {
+		create(win, options);
+	}
 
-	(electron.app || electron.remote.app).on('browser-window-created', (e, win) => {
-		create(win, opts);
+	(electron.app || electron.remote.app).on('browser-window-created', (event, win) => {
+		create(win, options);
 	});
 };
 
 
 /***/ }),
-/* 90 */
+/* 89 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-module.exports = process.defaultApp || /[\\/]electron-prebuilt[\\/]/.test(process.execPath) || /[\\/]electron[\\/]/.test(process.execPath);
+const electron = __webpack_require__(17);
+
+const app = electron.app || electron.remote.app;
+
+const isEnvSet = 'ELECTRON_IS_DEV' in process.env;
+const getFromEnv = parseInt(process.env.ELECTRON_IS_DEV, 10) === 1;
+
+module.exports = isEnvSet ? getFromEnv : !app.isPackaged;
 
 
 /***/ }),
-/* 91 */
+/* 90 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9634,7 +9655,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _helpers = __webpack_require__(83);
+var _helpers = __webpack_require__(82);
 
 var _helpers2 = _interopRequireDefault(_helpers);
 
@@ -9725,7 +9746,7 @@ function createTrayIcon(inpOptions, mainWindow) {
 exports.default = createTrayIcon;
 
 /***/ }),
-/* 92 */
+/* 91 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -9743,7 +9764,7 @@ var _path = __webpack_require__(14);
 
 var _path2 = _interopRequireDefault(_path);
 
-var _helpers = __webpack_require__(83);
+var _helpers = __webpack_require__(82);
 
 var _helpers2 = _interopRequireDefault(_helpers);
 
@@ -9753,7 +9774,7 @@ var isOSX = _helpers2.default.isOSX,
     isWindows = _helpers2.default.isWindows,
     isLinux = _helpers2.default.isLinux;
 
-var log = __webpack_require__(86);
+var log = __webpack_require__(85);
 /**
  * Synchronously find a file or directory
  * @param {RegExp} pattern regex
